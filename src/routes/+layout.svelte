@@ -1,7 +1,17 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import '../app.css';
+	import { page } from '$app/state';
 	let { children } = $props();
+
+	// Function to check if a path is active
+	// Use path.slice(1) to handle the leading slash
+	function isActive(path: string) {
+		if (path === '/') {
+			return page.url.pathname === '/';
+		}
+		return page.url.pathname.startsWith(path);
+	}
 </script>
 
 <svelte:head>
@@ -17,10 +27,11 @@
 				<span class="logo-text">LinkUp</span>
 			</div>
 			<div class="nav-links">
-				<a href="/" class="nav-link" class:active={true}>Pagrindinis</a> <!-- NEEDS ACTIVE CLASS LOGIC-->
-				<a href="/user" class="nav-link" class:active={false}>Mano užduotys</a>
-				<a href="/" class="nav-link" class:active={false}>Žinutės <span class="notification-dot"></span></a>
-                <a href="/user" class="user-menu">
+				<a href="/" class="nav-link" class:active={isActive('/')}>Pagrindinis</a>
+				<a href="/create" class="nav-link" class:active={isActive('/create')}>Kurti</a>
+                <a href="/app/activities" class="nav-link" class:active={isActive('/app/activities')}>Veiklos</a>
+				<a href="/messages" class="nav-link" class:active={isActive('/messages')}>Žinutės <span class="notification-dot"></span></a>
+                <a href="/app/profile" class="user-menu" class:active={isActive('/app/profile')}>
                     <img src="/images/account.svg" alt="Paskyra" class="user-avatar">
                     <span class="user-name">Username</span>
                 </a>
