@@ -18,8 +18,8 @@
 			</div>
 			<div class="nav-links">
 				<a href="/" class="nav-link" class:active={true}>Pagrindinis</a> <!-- NEEDS ACTIVE CLASS LOGIC-->
-				<a href="/user" class="nav-link" class:active={false}>Mano užduotys</a>
-				<a href="/" class="nav-link" class:active={false}>Žinutės <span class="notification-dot"></span></a>
+				<a href="/create" class="nav-link" class:active={false}>Kurti</a>
+				<a href="/messages" class="nav-link" class:active={false}>Žinutės <span class="notification-dot"></span></a>
                 <a href="/user" class="user-menu">
                     <img src="/images/account.svg" alt="Paskyra" class="user-avatar">
                     <span class="user-name">Username</span>
