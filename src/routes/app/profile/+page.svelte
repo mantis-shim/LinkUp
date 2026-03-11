@@ -58,14 +58,113 @@
 			</footer>
 		</article>
 	{:else}
-		<div class="status-msg">
-			<h2>User not found</h2>
-			<a href="/app/activities" class="nav-arrow prev" style="position: static; text-decoration: none; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">Back to Activities</a>
-		</div>
+		<article class="profile-card skeleton-card">
+			<header class="profile-header skeleton">
+				<div class="avatar-placeholder skeleton-circle"></div>
+				<div class="user-meta">
+					<div class="skeleton-line title"></div>
+					<div class="skeleton-line badge"></div>
+				</div>
+			</header>
+
+			<section class="profile-content">
+				<div class="info-list">
+					<div class="skeleton-info-item"></div>
+					<div class="skeleton-info-item"></div>
+				</div>
+
+				<div class="user-activities">
+					<div class="skeleton-line subtitle"></div>
+					<div class="activity-scroll">
+						<div class="skeleton-box"></div>
+						<div class="skeleton-box"></div>
+					</div>
+				</div>
+			</section>
+
+			<div class="status-overlay">
+				<h2>User Not Found</h2>
+				<p>The profile you are looking for doesn't exist.</p>
+				<a href="/app/profile" class="action-btn-link">Reload</a>
+			</div>
+		</article>
 	{/if}
 </div>
 
 <style>
+	/* Skeleton Animations */
+	@keyframes pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.5; }
+	}
+
+	.skeleton-card {
+		position: relative;
+		opacity: 0.6;
+	}
+
+	.skeleton-circle {
+		width: 80px;
+		height: 80px;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-full);
+		animation: pulse 2s infinite ease-in-out;
+	}
+
+	.skeleton-line {
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-sm);
+		animation: pulse 2s infinite ease-in-out;
+		margin-bottom: var(--space-2);
+	}
+
+	.skeleton-line.title { height: 1.5rem; width: 120px; }
+	.skeleton-line.badge { height: 1rem; width: 60px; }
+	.skeleton-line.subtitle { height: 1.5rem; width: 100px; margin-top: var(--space-8); margin-bottom: var(--space-4); }
+
+	.skeleton-info-item {
+		height: 2.5rem;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-sm);
+		animation: pulse 2s infinite ease-in-out;
+		margin-bottom: var(--space-4);
+	}
+
+	.skeleton-box {
+		height: 80px;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-lg);
+		animation: pulse 2s infinite ease-in-out;
+		margin-bottom: var(--space-3);
+	}
+
+	.status-overlay {
+		position: absolute;
+		inset: 0;
+		background: rgba(var(--color-bg-rgb), 0.5);
+		backdrop-filter: blur(2px);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		bottom: 15%;
+		justify-content: center;
+		text-align: center;
+		padding: var(--space-8);
+		border-radius: var(--radius-xl);
+	}
+
+	.status-overlay h2 { color: var(--color-text); margin-bottom: var(--space-2); }
+	.status-overlay p { color: var(--color-text-subtle); margin-bottom: var(--space-8); }
+
+	.action-btn-link {
+		padding: var(--space-3) var(--space-8);
+		background: var(--color-primary);
+		color: white;
+		text-decoration: none;
+		border-radius: var(--radius-lg);
+		font-weight: 600;
+	}
+
 	.card-wrapper {
 		background: var(--color-bg);
 		display: flex;
