@@ -1,73 +1,115 @@
 <script lang="ts">
 	import type { Activity } from '$lib/types';
+	import { onMount } from 'svelte';
 
-	export let data;
-	const activity: Activity = data?.activity || {
-		id: 1,
-		name: 'Sample Activity',
-		description: 'This is a detailed description of the activity. It explains what will happen, what to bring, and any other relevant details.',
-		location: 'City Center, Main St 1',
-		image_src: "/images/article1.webp",
-		creator_id: 1,
-		category_id: 2,
-		created_at: new Date().toISOString(),
-		starts_at: new Date().toISOString(),
-		gender_id: 1
-	};
+	let { data } = $props();
+	
+	let activities = $state<Activity[]>(data.activities || []);
+	let nextOffset = $state(data.nextOffset);
+	let loading = $state(false);
+
+	// Container for the list of cards
+	let scrollContainer: HTMLDivElement;
+
+	async function loadMore() {
+		if (loading || nextOffset === null) return;
+		loading = true;
+
+		try {
+			const res = await fetch(`/app/activities?offset=${nextOffset}`);
+			const newData = await res.json();
+			
+			activities = [...activities, ...newData.activities];
+			nextOffset = newData.nextOffset;
+		} catch (e) {
+			console.error('Failed to load more activities', e);
+		} finally {
+			loading = false;
+		}
+	}
+
+	function handleScroll(e: Event) {
+		const target = e.target as HTMLDivElement;
+		// If we are near the bottom of the scrollable content
+		if (target.scrollHeight - target.scrollTop <= target.clientHeight + 100) {
+			loadMore();
+		}
+	}
 </script>
 
-<div>
-	<article>
-		<!-- Image Placeholder -->
-		<figure>
-			{#if activity.image_src}
-				<img src={activity.image_src} alt={activity.name} />
-			{:else}
-				<div style="aspect-ratio: 1/1; background: var(--color-bg-secondary); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-lg);">
-					<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-subtle)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-					</svg>
-				</div>
-			{/if}
-		</figure>
+<div class="scroll-wrapper" onscroll={handleScroll}>
+	{#if activities.length > 0}
+		{#each activities as activity}
+			<article>
+				<!-- Image Placeholder -->
+				<figure>
+					{#if activity.image_src}
+						<img src={activity.image_src} alt={activity.name} />
+					{:else}
+						<div style="aspect-ratio: 1/1; background: var(--color-bg-secondary); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-lg);">
+							<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-subtle)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+							</svg>
+						</div>
+					{/if}
+				</figure>
 
-		<!-- Content -->
-		<section>
-			<header>
-				<div class="title-group">
-					<h1>{activity.name}</h1>
-					<small>By Creator #{activity.creator_id}</small>
-				</div>
-				<mark>Category #{activity.category_id}</mark>
-			</header>
+				<!-- Content -->
+				<section>
+					<header>
+						<div class="title-group">
+							<h1>{activity.name}</h1>
+							<small>By Creator #{activity.creator_id}</small>
+						</div>
+						<mark>Category #{activity.category_id}</mark>
+					</header>
 
-			{#if activity.description}
-				<p>{activity.description}</p>
-			{/if}
+					{#if activity.description}
+						<p>{activity.description}</p>
+					{/if}
 
-			<div class="info-list">
-				<div class="info-item">
-					<span class="label">Location</span>
-					<span class="value">{activity.location || 'Not set'}</span>
-				</div>
-				<div class="info-item">
-					<span class="label">Date</span>
-					<span class="value">{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : 'TBD'}</span>
-				</div>
-				<div class="info-item">
-					<span class="label">Gender</span>
-					<span class="value">{activity.gender_id || 'Any'}</span>
-				</div>
-			</div>
+					<div class="info-list">
+						<div class="info-item">
+							<span class="label">Location</span>
+							<span class="value">{activity.location || 'Not set'}</span>
+						</div>
+						<div class="info-item">
+							<span class="label">Date</span>
+							<span class="value">{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : 'TBD'}</span>
+						</div>
+						<div class="info-item">
+							<span class="label">Gender</span>
+							<span class="value">{activity.gender_id || 'Any'}</span>
+						</div>
+					</div>
 
-			<footer>
-				<small>Created {new Date(activity.created_at).toLocaleDateString()}</small>
-			</footer>
-		</section>
-	</article>
+					<footer>
+						<small>Created {new Date(activity.created_at).toLocaleDateString()}</small>
+					</footer>
+				</section>
+			</article>
+		{/each}
+		
+		{#if loading}
+			<div class="status-msg">Loading more...</div>
+		{/if}
+		
+		{#if nextOffset === null && activities.length > 0}
+			<div class="status-msg">No more activities to show</div>
+		{/if}
+	{:else}
+		<div class="status-msg">No activities found</div>
+	{/if}
 </div>
 
 <style>
+	.scroll-wrapper {
+		height: 100dvh;
+		overflow-y: auto;
+		scroll-snap-type: y mandatory;
+		background: var(--color-bg);
+	}
+
 	article {
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
@@ -75,12 +117,21 @@
 		padding: var(--space-8);
 		max-width: var(--max-w-sm);
 		margin: 0 auto;
-		height: 90dvh;
+		height: 100dvh;
 		display: flex;
 		flex-direction: column;
 		box-shadow: none;
 		box-sizing: border-box;
 		overflow: hidden;
+		scroll-snap-align: start;
+		scroll-snap-stop: always;
+	}
+
+	.status-msg {
+		text-align: center;
+		padding: var(--space-8);
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
 	}
 
 	figure {
