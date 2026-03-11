@@ -17,7 +17,6 @@ CREATE TABLE genders (
 CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL
-    --description?
 );
 
 CREATE TABLE activities (
@@ -25,14 +24,17 @@ CREATE TABLE activities (
     name VARCHAR(30) NOT NULL,
     description TEXT,
     location VARCHAR(255),
+    image_src TEXT,
     creator_id INT NOT NULL REFERENCES users(id),
     category_id INT NOT NULL REFERENCES categories(id), -- Many to Many?
-    gender_id INT REFENCES genders(id),
+    created_at DATETIME DEFAULT NOW(),
+    starts_at DATETIME,
+    gender_id INT REFERENCES genders(id)
 );
 
 CREATE TABLE activity_participants(
     activity_id INT NOT NULL REFERENCES activities(id),
     user_id INT NOT NULL REFERENCES users(id),
     joined_at DATETIME DEFAULT NOW(),
-    PRIMARY KEY (activity_id, participant_id)
+    PRIMARY KEY (activity_id, user_id)
 );
