@@ -38,3 +38,41 @@ CREATE TABLE activity_participants(
     joined_at DATETIME DEFAULT NOW(),
     PRIMARY KEY (activity_id, user_id)
 );
+
+CREATE TABLE converstaions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100), -- NULL FOR DIRECT MESSAGES
+    is_group BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME DEFAULT NOW()
+);
+
+CREATE TABLE conversations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    is_group BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME DEFAULT NOW()
+);
+
+CREATE TABLE conversation_members (
+    conversation_id INT NOT NULL REFERENCES conversations(id),
+    user_id INT NOT NULL REFERENCES users(id),
+    joined_at DATETIME DEFAULT NOW(),
+    PRIMARY KEY (conversation_id, user_id)
+);
+
+CREATE TABLE messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    conversation_id INT NOT NULL REFERENCES convesations(id),
+    sender_id INT NOT NULL REFERENCES users(id),
+    content TEXT NOT NULL,
+    sent_at DATETIME DEFAULT NOW()
+);
+
+-- Friends
+CREATE TABLE friendships (
+    user_id INT NOT NULL REFERENCES users(id),
+    friend_id INT NOT NULL REFERENCES users(id),
+    status ENUM('pending', 'accepted') DEFAULT 'pending',
+    created_at DATETIME DEFAULT NOW(),
+    PRIMARY KEY (user_id, friend_id)
+);
