@@ -17,7 +17,6 @@ CREATE TABLE genders (
 CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL
-    --description?
 );
 
 CREATE TABLE activities (
@@ -25,7 +24,6 @@ CREATE TABLE activities (
     name VARCHAR(30) NOT NULL,
     description TEXT,
     location VARCHAR(255),
-
     image_src TEXT,
     creator_id INT NOT NULL REFERENCES users(id),
     category_id INT NOT NULL REFERENCES categories(id), -- Many to Many?
