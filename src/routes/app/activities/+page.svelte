@@ -1,46 +1,58 @@
 <script lang="ts">
 	import type { Activity } from '$lib/types';
-	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { fly } from 'svelte/transition';
 
 	let { data } = $props();
 	
-	let activities = $state<Activity[]>(data.activities || []);
-	let nextOffset = $state(data.nextOffset);
-	let loading = $state(false);
+	let activity = $derived(data.activity);
+	let offset = $derived(data.offset);
+	let hasMore = $derived(data.hasMore);
 
-	// Container for the list of cards
-	let scrollContainer: HTMLDivElement;
+	// Tracking direction for transition
+	let direction = $state(1); // 1 for right, -1 for left
 
-	async function loadMore() {
-		if (loading || nextOffset === null) return;
-		loading = true;
-
-		try {
-			const res = await fetch(`/app/activities?offset=${nextOffset}`);
-			const newData = await res.json();
-			
-			activities = [...activities, ...newData.activities];
-			nextOffset = newData.nextOffset;
-		} catch (e) {
-			console.error('Failed to load more activities', e);
-		} finally {
-			loading = false;
-		}
+	function goToNext() {
+		if (!hasMore) return;
+		direction = 1;
+		const nextOffset = offset + 1;
+		goto(`?offset=${nextOffset}`, { replaceState: false, keepFocus: true, noScroll: true });
 	}
 
-	function handleScroll(e: Event) {
-		const target = e.target as HTMLDivElement;
-		// If we are near the bottom of the scrollable content
-		if (target.scrollHeight - target.scrollTop <= target.clientHeight + 100) {
-			loadMore();
-		}
+	function goToPrev() {
+		if (offset <= 0) return;
+		direction = -1;
+		const prevOffset = offset - 1;
+		goto(`?offset=${prevOffset}`, { replaceState: false, keepFocus: true, noScroll: true });
 	}
 </script>
 
-<div class="scroll-wrapper" onscroll={handleScroll}>
-	{#if activities.length > 0}
-		{#each activities as activity}
-			<article>
+<div class="card-wrapper">
+	{#if activity}
+		<div class="animation-container">
+			{#key offset}
+				<article
+					in:fly={{ x: 300 * direction, opacity: 0, duration: 400, delay: 100 }}
+					out:fly={{ x: -150 * direction, opacity: 0, duration: 300 }}
+				>
+					<!-- Previous Arrow (only if not at first) -->
+				{#if offset > 0}
+					<button class="nav-arrow prev" onclick={goToPrev} aria-label="Previous activity">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="15 18 9 12 15 6"></polyline>
+						</svg>
+					</button>
+				{/if}
+
+				<!-- Next Arrow (only if has more) -->
+				{#if hasMore}
+					<button class="nav-arrow next" onclick={goToNext} aria-label="Next activity">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="9 18 15 12 9 6"></polyline>
+						</svg>
+					</button>
+				{/if}
+
 				<!-- Image Placeholder -->
 				<figure>
 					{#if activity.image_src}
@@ -84,30 +96,41 @@
 					</div>
 
 					<footer>
-						<small>Created {new Date(activity.created_at).toLocaleDateString()}</small>
+						<small>Created {new Date(activity.created_at).toLocaleDateString()} (Index: {offset})</small>
 					</footer>
 				</section>
 			</article>
-		{/each}
-		
-		{#if loading}
-			<div class="status-msg">Loading more...</div>
-		{/if}
-		
-		{#if nextOffset === null && activities.length > 0}
-			<div class="status-msg">No more activities to show</div>
-		{/if}
+		{/key}
+		</div>
 	{:else}
-		<div class="status-msg">No activities found</div>
+		<div class="status-msg">
+			<h2>No more activities</h2>
+			<button class="nav-arrow prev" style="position: static; margin-top: 20px;" onclick={() => goto('?offset=0')}>Back to Start</button>
+		</div>
 	{/if}
 </div>
 
 <style>
-	.scroll-wrapper {
-		height: 100dvh;
-		overflow-y: auto;
-		scroll-snap-type: y mandatory;
+	.animation-container {
+		position: relative;
+		width: 100%;
+		max-width: var(--max-w-sm);
+		height: 90dvh;
+		display: grid;
+		place-items: center;
+	}
+
+	.animation-container > :global(article) {
+		grid-area: 1 / 1;
+	}
+
+	.card-wrapper {
 		background: var(--color-bg);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+		position: relative;
 	}
 
 	article {
@@ -116,22 +139,54 @@
 		border-radius: var(--radius-xl);
 		padding: var(--space-8);
 		max-width: var(--max-w-sm);
-		margin: 0 auto;
-		height: 100dvh;
+		width: 100%;
+		height: 90dvh;
 		display: flex;
 		flex-direction: column;
 		box-shadow: none;
 		box-sizing: border-box;
 		overflow: hidden;
-		scroll-snap-align: start;
-		scroll-snap-stop: always;
 	}
 
-	.status-msg {
-		text-align: center;
-		padding: var(--space-8);
-		color: var(--color-text-muted);
-		font-size: var(--text-sm);
+	.nav-arrow {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		color: var(--color-text);
+		border-radius: var(--radius-full);
+		width: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: var(--shadow-md);
+		z-index: 10;
+		padding: 0;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.nav-arrow:hover {
+		background: var(--color-bg-secondary);
+		transform: translateY(-50%) scale(1.1);
+	}
+
+	.nav-arrow.next {
+		right: var(--space-4);
+	}
+
+	.nav-arrow.prev {
+		left: var(--space-4);
+	}
+
+	figure {
+		flex: 1;
+		min-height: 0;
+		margin: 0 0 var(--space-8) 0;
+		border-radius: var(--radius-lg);
+		overflow: hidden;
 	}
 
 	figure {
