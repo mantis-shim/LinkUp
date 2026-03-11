@@ -31,7 +31,7 @@
 				<a href="/create" class="nav-link" class:active={isActive('/create')}>Kurti</a>
                 <a href="/app/activities" class="nav-link" class:active={isActive('/app/activities')}>Veiklos</a>
 				<a href="/messages" class="nav-link" class:active={isActive('/messages')}>Žinutės <span class="notification-dot"></span></a>
-                <a href="/user" class="user-menu" class:active={isActive('/user')}>
+                <a href="/app/profile" class="user-menu" class:active={isActive('/app/profile')}>
                     <img src="/images/account.svg" alt="Paskyra" class="user-avatar">
                     <span class="user-name">Username</span>
                 </a>
