@@ -103,14 +103,125 @@
 		{/key}
 		</div>
 	{:else}
-		<div class="status-msg">
-			<h2>No more activities</h2>
-			<button class="nav-arrow prev" style="position: static; margin-top: 20px;" onclick={() => goto('?offset=0')}>Back to Start</button>
-		</div>
+		<article class="skeleton-card">
+			<div class="skeleton-image"></div>
+			<section>
+				<div class="skeleton-header">
+					<div class="skeleton-title"></div>
+					<div class="skeleton-badge"></div>
+				</div>
+				<div class="skeleton-desc"></div>
+				<div class="skeleton-desc short"></div>
+				<div class="skeleton-info-list">
+					<div class="skeleton-info-item"></div>
+					<div class="skeleton-info-item"></div>
+					<div class="skeleton-info-item"></div>
+				</div>
+			</section>
+			<div class="status-overlay">
+				<h2>No Activities Found</h2>
+				<p>Be the first to create one!</p>
+				<button class="action-btn" onclick={() => location.reload()}>Refresh Feed</button>
+			</div>
+		</article>
 	{/if}
 </div>
 
 <style>
+	/* Skeleton Animations */
+	@keyframes pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.5; }
+	}
+
+	.skeleton-card {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		padding: var(--space-8);
+		width: 100%;
+		height: 90dvh;
+		position: relative;
+		opacity: 0.7;
+	}
+
+	.skeleton-image {
+		aspect-ratio: 1/1;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-lg);
+		margin-bottom: var(--space-6);
+		animation: pulse 2s infinite ease-in-out;
+	}
+
+	.skeleton-title {
+		height: 2rem;
+		width: 60%;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-md);
+		margin-bottom: var(--space-2);
+		animation: pulse 2s infinite ease-in-out;
+	}
+
+	.skeleton-badge {
+		height: 1.5rem;
+		width: 80px;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-full);
+		animation: pulse 2s infinite ease-in-out;
+	}
+
+	.skeleton-desc {
+		height: 1rem;
+		width: 90%;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-sm);
+		margin-bottom: var(--space-2);
+		animation: pulse 2s infinite ease-in-out;
+	}
+
+	.skeleton-desc.short { width: 40%; }
+
+	.skeleton-info-list {
+		margin-top: var(--space-8);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.skeleton-info-item {
+		height: 1.5rem;
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-sm);
+		animation: pulse 2s infinite ease-in-out;
+	}
+
+	.status-overlay {
+		position: absolute;
+		inset: 0;
+		background: rgba(0,0,0,0.05);
+		backdrop-filter: blur(2px);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		padding: var(--space-8);
+		border-radius: var(--radius-xl);
+	}
+
+	.status-overlay h2 { color: var(--color-text); margin-bottom: var(--space-2); }
+	.status-overlay p { color: var(--color-text-subtle); margin-bottom: var(--space-8); }
+
+	.action-btn {
+		padding: var(--space-3) var(--space-8);
+		background: var(--color-primary);
+		color: white;
+		border: none;
+		border-radius: var(--radius-lg);
+		font-weight: 600;
+		cursor: pointer;
+	}
+
 	.animation-container {
 		position: relative;
 		width: 100%;
