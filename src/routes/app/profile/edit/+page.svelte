@@ -33,7 +33,7 @@
 						</div>
 						<div class="info-item">
 							<span class="label">Password</span>
-							<span class="value"></span>
+							<button type="button" class="btn-change">Change</button>
 						</div>
 					</div>
 				</form>
@@ -169,6 +169,34 @@
 
 	.value-input:focus {
 		outline: none;
+	}
+
+	.btn-change {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: var(--font-semibold);
+		color: white;
+		background: var(--color-primary);
+		border: none;
+		border-radius: var(--radius-lg);
+		padding: var(--space-2) var(--space-4);
+		cursor: pointer;
+		transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	.btn-change:hover {
+		background: var(--color-primary-hover);
+		box-shadow: var(--shadow-glow);
+		transform: translateY(-1px);
+	}
+
+	.btn-change:active {
+		transform: translateY(0);
+	}
+
+	.btn-change:focus-visible {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 2px;
 	}
 
 	.empty-msg {
