@@ -1,6 +1,7 @@
 <script lang="ts">
 	let { data } = $props();
 	let user = $derived(data.user);
+	let username = $state(data.user?.username ?? '');
 </script>
 
 <div class="card-wrapper profile-view">
@@ -14,7 +15,7 @@
 			</div>
 			<div class="user-meta">
 				{#if user}
-					<h1>{user.username ?? 'Anonymous'}</h1>
+					<h1>{username || (user.username ?? 'Anonymous')}</h1>
 					<mark>UID: #{user.id}</mark>
 				{:else}
 					<h1>User not found</h1>
@@ -24,21 +25,29 @@
 
 		<section class="profile-content">
 			{#if user}
-				<div class="info-list">
-					<div class="info-item">
-						<span class="label">Username</span>
-						<span class="value">{user.username}</span>
+				<form id="edit-profile-form" method="POST" action="?/updateProfile">
+					<div class="info-list">
+						<div class="info-item">
+							<span class="label">Username</span>
+							<input name="username" type="text" bind:value={username} required class="value value-input" />
+						</div>
+						<div class="info-item">
+							<span class="label">Password</span>
+							<span class="value"></span>
+						</div>
 					</div>
-					<div class="info-item">
-						<span class="label">Password</span>
-						<span class="value"></span>
-					</div>
-				</div>
+				</form>
 			{:else}
 				<p class="empty-msg">User not found. Return to profile.</p>
 			{/if}
 		</section>
 
+		{#if user}
+			<footer class="action-buttons">
+				<a href="/app/profile" class="action-btn action-btn-cancel">Cancel</a>
+				<button type="submit" form="edit-profile-form" class="action-btn">Save</button>
+			</footer>
+		{/if}
 	</article>
 </div>
 
@@ -111,30 +120,119 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+		padding-top: var(--space-1);
 	}
 
 	.info-item {
 		display: flex;
+		align-items: center;
 		justify-content: space-between;
+		min-height: 2.25rem;
 		padding-bottom: var(--space-2);
 		border-bottom: 1px solid var(--color-border);
+		overflow: visible;
 	}
 
 	.label {
+		font-family: var(--font-sans);
+		font-size: var(--text-base);
+		font-weight: var(--font-regular);
 		color: var(--color-text-subtle);
-		font-size: var(--text-sm);
-		font-weight: 500;
 	}
 
 	.value {
+		font-family: var(--font-sans);
+		font-size: var(--text-base);
+		font-weight: var(--font-semibold);
 		color: var(--color-text);
-		font-weight: 600;
+		line-height: 1.5;
+		min-height: 1.5rem;
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.value-input {
+		font-family: var(--font-sans);
+		font-size: var(--text-base);
+		font-weight: var(--font-semibold);
+		line-height: 1.5;
+		color: var(--color-text);
+		background: none;
+		border: none;
+		text-align: right;
+		min-width: 8ch;
+		max-width: 12rem;
+		padding: var(--space-1) 0;
+		box-sizing: border-box;
+		outline: none;
+	}
+
+	.value-input:focus {
+		outline: none;
 	}
 
 	.empty-msg {
 		color: var(--color-text-subtle);
 		font-style: italic;
 		margin-top: var(--space-4);
+	}
+
+	.action-buttons {
+		display: flex;
+		gap: var(--space-4);
+		margin-top: var(--space-4);
+		justify-content: center;
+	}
+
+	.action-buttons .action-btn {
+		flex: 1;
+		min-width: 10rem;
+		max-width: 70%;
+	}
+
+	.action-btn {
+		display: block;
+		text-align: center;
+		width: 100%;
+		box-sizing: border-box;
+		padding: var(--space-4);
+		font-size: var(--text-sm);
+		line-height: 1.5;
+		background: var(--color-primary);
+		color: white;
+		border: none;
+		border-radius: var(--radius-lg);
+		font-weight: 600;
+		cursor: pointer;
+		margin-top: 0;
+		text-decoration: none;
+		transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	.action-btn:hover {
+		box-shadow: var(--shadow-glow);
+		transform: translateY(-1px);
+		text-decoration: none;
+		color: white;
+	}
+
+	.action-btn:active {
+		transform: translateY(0);
+	}
+
+	.action-btn:focus-visible {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 3px;
+	}
+
+	.action-btn-cancel {
+		background-color: #e8e4fc;
+		color: var(--color-primary);
+	}
+
+	.action-btn-cancel:hover {
+		background-color: #ddd8f7;
+		color: var(--color-primary);
 	}
 
 </style>
