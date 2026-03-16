@@ -2,6 +2,17 @@
 	let { data } = $props();
 	let user = $derived(data.user);
 	let username = $state(data.user?.username ?? '');
+	let showPasswordFields = $state(false);
+	let currentPassword = $state('');
+	let newPassword = $state('');
+	let confirmPassword = $state('');
+
+	function closePasswordFields() {
+		showPasswordFields = false;
+		currentPassword = '';
+		newPassword = '';
+		confirmPassword = '';
+	}
 </script>
 
 <div class="card-wrapper profile-view">
@@ -33,7 +44,7 @@
 						</div>
 						<div class="info-item">
 							<span class="label">Password</span>
-							<button type="button" class="btn-change">Change</button>
+							<button type="button" class="btn-change" onclick={() => (showPasswordFields = true)}>Change</button>
 						</div>
 					</div>
 				</form>
@@ -49,6 +60,32 @@
 			</footer>
 		{/if}
 	</article>
+
+	{#if showPasswordFields}
+		<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="password-modal-title" onclick={closePasswordFields}>
+			<div class="modal-box" onclick={(e) => e.stopPropagation()}>
+				<h2 id="password-modal-title" class="modal-title">Change password</h2>
+				<div class="password-change-fields">
+					<label class="password-label">
+						<span class="password-label-text">Current password</span>
+						<input type="password" bind:value={currentPassword} class="password-input" autocomplete="current-password" />
+					</label>
+					<label class="password-label">
+						<span class="password-label-text">New password</span>
+						<input type="password" bind:value={newPassword} class="password-input" autocomplete="new-password" />
+					</label>
+					<label class="password-label">
+						<span class="password-label-text">Confirm new password</span>
+						<input type="password" bind:value={confirmPassword} class="password-input" autocomplete="new-password" />
+					</label>
+				</div>
+				<div class="modal-actions">
+					<button type="button" class="btn-change-cancel" onclick={closePasswordFields}>Cancel</button>
+					<button type="button" class="btn-change-save">Save</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -197,6 +234,111 @@
 	.btn-change:focus-visible {
 		outline: 2px solid var(--color-primary);
 		outline-offset: 2px;
+	}
+
+	.modal-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.4);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+		padding: var(--space-4);
+	}
+
+	.modal-box {
+		background: var(--color-surface);
+		border-radius: var(--radius-xl);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--shadow-lg);
+		padding: var(--space-6);
+		max-width: 22rem;
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.modal-title {
+		font-size: var(--text-xl);
+		font-weight: var(--font-semibold);
+		color: var(--color-text);
+		margin: 0 0 var(--space-2);
+	}
+
+	.password-change-fields {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.password-label {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.password-label-text {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: var(--font-medium);
+		color: var(--color-text-subtle);
+	}
+
+	.password-input {
+		font-family: var(--font-sans);
+		font-size: var(--text-base);
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background: var(--color-surface);
+		color: var(--color-text);
+	}
+
+	.password-input:focus {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 1px;
+	}
+
+	.modal-actions {
+		display: flex;
+		gap: var(--space-3);
+		margin-top: var(--space-2);
+		justify-content: flex-end;
+	}
+
+	.btn-change-cancel {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: var(--font-semibold);
+		color: var(--color-primary);
+		background: #e8e4fc;
+		border: none;
+		border-radius: var(--radius-lg);
+		padding: var(--space-2) var(--space-4);
+		cursor: pointer;
+	}
+
+	.btn-change-cancel:hover {
+		background: #ddd8f7;
+	}
+
+	.btn-change-save {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: var(--font-semibold);
+		color: white;
+		background: var(--color-primary);
+		border: none;
+		border-radius: var(--radius-lg);
+		padding: var(--space-2) var(--space-4);
+		cursor: pointer;
+	}
+
+	.btn-change-save:hover {
+		background: var(--color-primary-hover);
+		box-shadow: var(--shadow-glow);
 	}
 
 	.empty-msg {
