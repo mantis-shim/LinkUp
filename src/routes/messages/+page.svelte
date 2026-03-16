@@ -3,10 +3,31 @@
   import { onMount, onDestroy } from 'svelte';
   let showDropdown = false;
   let dropdownRef: HTMLDivElement | null = null;
+  let feedback = '';
 
   function handleClick(event: MouseEvent) {
     if (showDropdown && dropdownRef && !dropdownRef.contains(event.target as Node)) {
       showDropdown = false;
+    }
+  }
+
+  async function addFriend(friendId: number) {
+    feedback = '';
+    try {
+      const res = await fetch('/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendId })
+      });
+      const result = await res.json();
+      if (result.success) {
+        feedback = 'Friend request sent!';
+        showDropdown = false;
+      } else {
+        feedback = result.error || 'Failed to send request.';
+      }
+    } catch (e) {
+      feedback = 'Network error.';
     }
   }
 
@@ -81,6 +102,19 @@
   font-size: 0.95rem;
   padding: 0.5rem 0;
 }
+.feedback {
+  position: fixed;
+  bottom: 6rem;
+  right: 2rem;
+  background: #e6f7ff;
+  color: #007bff;
+  border: 1px solid #b3e0ff;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  z-index: 200;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
 </style>
 
 <main>
@@ -95,11 +129,14 @@
       {:else}
         <ul>
           {#each data.users as user}
-            <li>{user.username}</li>
+            <li on:click={() => addFriend(user.id)}>{user.username}</li>
           {/each}
         </ul>
       {/if}
     </div>
+  {/if}
+  {#if feedback}
+    <div class="feedback">{feedback}</div>
   {/if}
 </main>
 
