@@ -38,20 +38,20 @@
 			<section class="profile-content">
 				<div class="info-list">
 					<div class="info-item">
-						<span class="label">Total Activities</span>
+						<span class="label">Iš viso veiklų</span>
 						<span class="value">{activities?.length ?? 0}</span>
 					</div>
 					<div class="info-item">
-						<span class="label">Member Since</span>
-						<span class="value">{user.created_at ? new Date(user.created_at).toLocaleDateString() : "Not Set"}</span>
+						<span class="label">Paskyra sukurta</span>
+						<span class="value">{user.created_at ? new Date(user.created_at).toLocaleDateString() : "Nenurodyta"}</span>
 					</div>
 				</div>
 
 				<!-- Shared Styling: Activity List -->
 				<div class="user-activities">
-				<h2>My Activities ({getFilteredActivities().length})</h2>
+				<h2>Mano veiklos ({getFilteredActivities().length})</h2>
 
-				<div class="category-tabs" role="tablist" aria-label="Activity category filter">
+				<div class="category-tabs" role="tablist" aria-label="Veiklos kategorijų filtras">
 					<button
 						class:selected={selectedCategory === 'created'}
 						onclick={() => (selectedCategory = 'created')}
@@ -82,20 +82,20 @@
 					<div class="activity-scroll">
 						{#each getFilteredActivities() as activity}
 							<div class="activity-preview">
-								<strong>{activity.name ?? "Untitled Activity"}</strong>
-								<small>{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : "Not Set"}</small>
-								<span>{activity.location ?? "No location"}</span>
+								<strong>{activity.name ?? "Be pavadinimo"}</strong>
+								<small>{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : "Nustatyta"}</small>
+								<span>{activity.location ?? "Vieta nenustatyta"}</span>
 							</div>
 						{/each}
 					</div>
 				{:else}
-					<p class="empty-msg">No activities in this category yet.</p>
+					<p class="empty-msg">Šioje kategorijoje veiklų nėra.</p>
 					{/if}
 				</div>
 			</section>
 
 			<footer>
-				<button class="action-btn" onclick={() => alert('Editing coming soon!')}>Edit Profile</button>
+				<button class="action-btn" onclick={() => alert('Redagavimas netrukus!')}>Redaguoti profilį</button>
 			</footer>
 		</article>
 	{:else}
@@ -124,9 +124,9 @@
 			</section>
 
 			<div class="status-overlay">
-				<h2>User Not Found</h2>
-				<p>The profile you are looking for doesn't exist.</p>
-				<a href="/app/profile" class="action-btn-link">Reload</a>
+				<h2>Vartotojas nerastas</h2>
+				<p>Ieškomas profilis neegzistuoja.</p>
+				<a href="/app/profile" class="action-btn-link">Įkelti iš naujo</a>
 			</div>
 		</article>
 	{/if}
