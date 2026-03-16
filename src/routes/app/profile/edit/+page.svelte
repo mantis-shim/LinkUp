@@ -6,12 +6,25 @@
 	let currentPassword = $state('');
 	let newPassword = $state('');
 	let confirmPassword = $state('');
+	let displayedPasswordDots = $state('');
+	let passwordMatchError = $state('');
 
 	function closePasswordFields() {
 		showPasswordFields = false;
 		currentPassword = '';
 		newPassword = '';
 		confirmPassword = '';
+		passwordMatchError = '';
+	}
+
+	function handleSavePassword() {
+		passwordMatchError = '';
+		if (!newPassword || newPassword !== confirmPassword) {
+			passwordMatchError = 'New password and confirmation do not match.';
+			return;
+		}
+		displayedPasswordDots = '•'.repeat(newPassword.length);
+		closePasswordFields();
 	}
 </script>
 
@@ -44,7 +57,12 @@
 						</div>
 						<div class="info-item">
 							<span class="label">Password</span>
-							<button type="button" class="btn-change" onclick={() => (showPasswordFields = true)}>Change</button>
+							<span class="value value-password-row">
+								{#if displayedPasswordDots}
+									<span class="password-dots">{displayedPasswordDots}</span>
+								{/if}
+								<button type="button" class="btn-change" onclick={() => (showPasswordFields = true)}>Change</button>
+							</span>
 						</div>
 					</div>
 				</form>
@@ -79,9 +97,17 @@
 						<input type="password" bind:value={confirmPassword} class="password-input" autocomplete="new-password" />
 					</label>
 				</div>
+				{#if passwordMatchError}
+					<p class="password-error" role="alert">{passwordMatchError}</p>
+				{/if}
 				<div class="modal-actions">
 					<button type="button" class="btn-change-cancel" onclick={closePasswordFields}>Cancel</button>
-					<button type="button" class="btn-change-save">Save</button>
+					<button
+					type="button"
+					class="btn-change-save"
+					disabled={!currentPassword || !newPassword || !confirmPassword}
+					onclick={handleSavePassword}
+				>Save</button>
 				</div>
 			</div>
 		</div>
@@ -301,6 +327,25 @@
 		outline-offset: 1px;
 	}
 
+	.value-password-row {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.password-dots {
+		color: var(--color-text);
+		font-family: var(--font-mono);
+		font-size: var(--text-base);
+		letter-spacing: 0.05em;
+	}
+
+	.password-error {
+		margin: 0;
+		font-size: var(--text-sm);
+		color: var(--color-danger);
+	}
+
 	.modal-actions {
 		display: flex;
 		gap: var(--space-3);
@@ -339,6 +384,16 @@
 	.btn-change-save:hover {
 		background: var(--color-primary-hover);
 		box-shadow: var(--shadow-glow);
+	}
+
+	.btn-change-save:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.btn-change-save:disabled:hover {
+		background: var(--color-primary);
+		box-shadow: none;
 	}
 
 	.empty-msg {
