@@ -1,20 +1,15 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	let { data } = $props();
 
 	interface Conversation {
 		id: number;
 		name: string;
-		lastMessage: string;
-		updatedAt: string;
-		unread: number;
+		last_message: string | null;
+		updated_at: string | null;
 	}
 
-	const conversations: Conversation[] = [
-		{ id: 1, name: 'Julija', lastMessage: 'Ar vis dar planuojame penktadienį?', updatedAt: '2026-03-15 14:30', unread: 2 },
-		{ id: 2, name: 'Rokas', lastMessage: 'Puiku, susitinkame prie ežero.', updatedAt: '2026-03-14 19:05', unread: 0 },
-		{ id: 3, name: 'Draugų grupė', lastMessage: 'Naujas renginys pridėtas!', updatedAt: '2026-03-13 09:10', unread: 5 },
-		{ id: 4, name: 'Mantas', lastMessage: 'Ačiū už pagalbą su kodu.', updatedAt: '2026-03-12 21:22', unread: 0 }
-	];
+	let conversations = $state<Conversation[]>((data as any).conversations || []);
 
 	function openConversation(conversation: Conversation) {
 		goto(`/app/messages/${conversation.id}`);
@@ -30,12 +25,10 @@
 				<button class="conversation-card" on:click={() => openConversation(conversation)}>
 					<div class="conversation-head">
 						<h2>{conversation.name}</h2>
-						{#if conversation.unread > 0}
-							<span class="badge">{conversation.unread}</span>
-						{/if}
+						<!-- Unread indicator is not tracked by schema, so hide or set zero -->
 					</div>
-					<p class="last-message">{conversation.lastMessage}</p>
-					<small class="timestamp">{new Date(conversation.updatedAt).toLocaleString()}</small>
+					<p class="last-message">{conversation.last_message ?? 'Nėra žinučių'}</p>
+					<small class="timestamp">{conversation.updated_at ? new Date(conversation.updated_at).toLocaleString() : ''}</small>
 				</button>
 			{/each}
 		</div>

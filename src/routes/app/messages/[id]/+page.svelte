@@ -1,25 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-
-	const dummyMessages = [
-		{ id: 1, author: 'other', text: 'Sveikas! Ar nori susitikti šiandien?', time: '2026-03-15 13:10' },
-		{ id: 2, author: 'me', text: 'Taip, galiu 17:00. Kur susitinkame?', time: '2026-03-15 13:12' },
-		{ id: 3, author: 'other', text: 'Pasitikime prie kavinės „Žalias puodelis“.', time: '2026-03-15 13:14' },
-	];
-
+	let { data } = $props();
+	let conversation = $state<any>((data as any).conversation || null);
+	let messages = $state<any[]>((data as any).messages || []);
+	let currentUserId = $state<number>((data as any).currentUserId || null);
 	let newMessage = '';
-
-	function sendMessage() {
-		if (!newMessage.trim()) return;
-		dummyMessages.push({
-			id: dummyMessages.length + 1,
-			author: 'me',
-			text: newMessage.trim(),
-			time: new Date().toLocaleString()
-		});
-		newMessage = '';
-	}
 
 	function goBack() {
 		goto('/app/messages');
@@ -33,23 +19,24 @@
 	</header>
 
 	<section class="chat-body">
-		{#each dummyMessages as message}
-			<div class="chat-bubble {message.author}">
-				<p>{message.text}</p>
-				<small>{message.time}</small>
+		{#each messages as message}
+			<div class="chat-bubble {message.sender_id === currentUserId ? 'me' : 'other'}">
+				<p>{message.content}</p>
+				<small>{message.sender_name} · {new Date(message.sent_at).toLocaleString()}</small>
 			</div>
 		{/each}
 	</section>
 
-	<footer class="chat-actions">
+	<form method="post" class="chat-actions">
 		<input
 			type="text"
+			name="content"
 			placeholder="Rašyti žinutę..."
 			bind:value={newMessage}
-			on:keydown={(event) => event.key === 'Enter' && sendMessage()}
+			on:keydown={(event) => event.key === 'Enter' && event.preventDefault()}
 		/>
-		<button on:click={sendMessage}>Siųsti</button>
-	</footer>
+		<button type="submit">Siųsti</button>
+	</form>
 </div>
 
 <style>
