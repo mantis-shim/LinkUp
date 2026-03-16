@@ -8,6 +8,11 @@
 	let confirmPassword = $state('');
 	let displayedPasswordDots = $state('');
 	let passwordMatchError = $state('');
+	function confirmDeleteAccount() {
+		if (confirm('Are you sure you want to delete your account?')) {
+			// No DB delete for now
+		}
+	}
 
 	function closePasswordFields() {
 		showPasswordFields = false;
@@ -66,7 +71,7 @@
 						</div>
 						<div class="info-item">
 							<span class="label">Account</span>
-							<button type="button" class="btn-change">Delete Account</button>
+							<button type="button" class="btn-change" onclick={confirmDeleteAccount}>Delete Account</button>
 						</div>
 					</div>
 				</form>
