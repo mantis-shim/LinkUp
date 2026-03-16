@@ -64,6 +64,10 @@
 								<button type="button" class="btn-change" onclick={() => (showPasswordFields = true)}>Change</button>
 							</span>
 						</div>
+						<div class="info-item">
+							<span class="label">Account</span>
+							<button type="button" class="btn-change">Delete Account</button>
+						</div>
 					</div>
 				</form>
 			{:else}
