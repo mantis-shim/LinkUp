@@ -1,8 +1,21 @@
 <script lang="ts">
 	let { data } = $props();
-	
-	let user = $derived(data.user);
-	let activities = $derived(data.activities || []);
+
+	let user = $state<any>((data as any).user || null);
+	let activities = $state<any[]>((data as any).activities || []);
+	let selectedCategory = $state<'created' | 'past' | 'upcoming'>('created');
+
+	function getFilteredActivities() {
+		const now = new Date();
+		return (activities || []).filter((activity: any) => {
+			if (selectedCategory === 'created') return true;
+			if (!activity.starts_at) return false;
+			const startsAt = new Date(activity.starts_at);
+			if (selectedCategory === 'past') return startsAt < now;
+			if (selectedCategory === 'upcoming') return startsAt >= now;
+			return true;
+		});
+	}
 </script>
 
 <div class="card-wrapper profile-view">
@@ -36,19 +49,47 @@
 
 				<!-- Shared Styling: Activity List -->
 				<div class="user-activities">
-					<h2>My Activities</h2>
-					{#if activities && activities.length > 0}
-						<div class="activity-scroll">
-							{#each activities as activity}
-								<div class="activity-preview">
-									<strong>{activity.name ?? "Untitled Activity"}</strong>
-									<small>{activity.created_at ? new Date(activity.created_at).toLocaleDateString() : "Not Set"}</small>
-									<span>{activity.location ?? "No location"}</span>
-								</div>
-							{/each}
-						</div>
-					{:else}
-						<p class="empty-msg">You haven't created any activities yet.</p>
+				<h2>My Activities ({getFilteredActivities().length})</h2>
+
+				<div class="category-tabs" role="tablist" aria-label="Activity category filter">
+					<button
+						class:selected={selectedCategory === 'created'}
+						onclick={() => (selectedCategory = 'created')}
+						role="tab"
+						aria-selected={selectedCategory === 'created'}
+					>
+						Sukurtos
+					</button>
+					<button
+						class:selected={selectedCategory === 'upcoming'}
+						onclick={() => (selectedCategory = 'upcoming')}
+						role="tab"
+						aria-selected={selectedCategory === 'upcoming'}
+					>
+						Ateinančios
+					</button>
+					<button
+						class:selected={selectedCategory === 'past'}
+						onclick={() => (selectedCategory = 'past')}
+						role="tab"
+						aria-selected={selectedCategory === 'past'}
+					>
+						Praėjusios
+					</button>
+				</div>
+
+				{#if getFilteredActivities().length > 0}
+					<div class="activity-scroll">
+						{#each getFilteredActivities() as activity}
+							<div class="activity-preview">
+								<strong>{activity.name ?? "Untitled Activity"}</strong>
+								<small>{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : "Not Set"}</small>
+								<span>{activity.location ?? "No location"}</span>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<p class="empty-msg">No activities in this category yet.</p>
 					{/if}
 				</div>
 			</section>
@@ -222,6 +263,28 @@
 		font-size: var(--text-lg);
 		margin: var(--space-8) 0 var(--space-4);
 		color: var(--color-text);
+	}
+
+	.category-tabs {
+		display: flex;
+		gap: var(--space-2);
+		margin-bottom: var(--space-4);
+	}
+
+	.category-tabs button {
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		color: var(--color-text);
+		border-radius: var(--radius-lg);
+		padding: var(--space-2) var(--space-4);
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.category-tabs button.selected,
+	.category-tabs button:hover {
+		background: var(--color-primary);
+		color: white;
 	}
 
 	.activity-scroll {
