@@ -1,13 +1,36 @@
 <script lang="ts">
 	let { data } = $props();
 
-	let user = $state<any>((data as any).user || null);
-	let activities = $state<any[]>((data as any).activities || []);
+	const user = $derived(() => (data as any).user || null);
+	const activities = $derived(() => (data as any).activities || []);
 	let selectedCategory = $state<'created' | 'past' | 'upcoming'>('created');
+	let tomorrowAlert = $state<string | null>(null);
+
+	function isTomorrow(dateString: string) {
+		const now = new Date();
+		const tomorrow = new Date(now);
+		tomorrow.setDate(now.getDate() + 1);
+		const date = new Date(dateString);
+		return (
+			date.getFullYear() === tomorrow.getFullYear() &&
+			date.getMonth() === tomorrow.getMonth() &&
+			date.getDate() === tomorrow.getDate()
+		);
+	}
+
+	$effect(() => {
+		tomorrowAlert = null;
+		for (const activity of activities()) {
+			if (activity.starts_at && isTomorrow(activity.starts_at)) {
+				tomorrowAlert = `Įvykis "${activity.name ?? 'Be pavadinimo'}" prasideda rytoj!`;
+				break;
+			}
+		}
+	});
 
 	function getFilteredActivities() {
 		const now = new Date();
-		return (activities || []).filter((activity: any) => {
+		return (activities() || []).filter((activity: any) => {
 			if (selectedCategory === 'created') return true;
 			if (!activity.starts_at) return false;
 			const startsAt = new Date(activity.starts_at);
@@ -19,7 +42,10 @@
 </script>
 
 <div class="card-wrapper profile-view">
-	{#if user}
+	{#if tomorrowAlert}
+		<div class="tomorrow-alert">{tomorrowAlert}</div>
+	{/if}
+	{#if user()}
 		<article class="profile-card">
 			<!-- Profile Header (Avatar/Name) -->
 			<header class="profile-header">
@@ -29,8 +55,8 @@
 					</svg>
 				</div>
 				<div class="user-meta">
-					<h1>{user.username ?? "Anonymous"}</h1>
-					<mark>UID: #{user.id ?? "???"}</mark>
+					<h1>{user().username ?? "Anonymous"}</h1>
+					<mark>UID: #{user().id ?? "???"}</mark>
 				</div>
 			</header>
 
@@ -39,11 +65,11 @@
 				<div class="info-list">
 					<div class="info-item">
 						<span class="label">Iš viso veiklų</span>
-						<span class="value">{activities?.length ?? 0}</span>
+						<span class="value">{activities()?.length ?? 0}</span>
 					</div>
 					<div class="info-item">
 						<span class="label">Paskyra sukurta</span>
-						<span class="value">{user.created_at ? new Date(user.created_at).toLocaleDateString() : "Nenurodyta"}</span>
+						<span class="value">{user().created_at ? new Date(user().created_at).toLocaleDateString() : "Nenurodyta"}</span>
 					</div>
 				</div>
 
@@ -347,5 +373,17 @@
 	.value {
 		color: var(--color-text);
 		font-weight: 600;
+	}
+	/* Tomorrow Alert Styling */
+	.tomorrow-alert {
+		background: var(--color-warning, #fff3cd);
+		color: var(--color-warning-text, #856404);
+		border: 1px solid var(--color-warning-border, #ffeeba);
+		border-radius: var(--radius-lg);
+		padding: var(--space-4);
+		margin-bottom: var(--space-6);
+		font-weight: 600;
+		text-align: center;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 	}
 </style>
