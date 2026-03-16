@@ -35,6 +35,7 @@
                     <img src="/images/account.svg" alt="Paskyra" class="user-avatar">
                     <span class="user-name">Username</span>
                 </a>
+                <a href="/logout" class="nav-link">Atsijungti</a>
 			</div>
 		</div>
 	</nav>
