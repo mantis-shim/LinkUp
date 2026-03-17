@@ -9,7 +9,7 @@
 	let displayedPasswordDots = $state('');
 	let passwordMatchError = $state('');
 	function confirmDeleteAccount() {
-		if (confirm('Are you sure you want to delete your account?')) {
+		if (confirm('Ar tikrai norite ištrinti savo paskyrą?')) {
 			// No DB delete for now
 		}
 	}
@@ -25,7 +25,7 @@
 	function handleSavePassword() {
 		passwordMatchError = '';
 		if (!newPassword || newPassword !== confirmPassword) {
-			passwordMatchError = 'New password and confirmation do not match.';
+			passwordMatchError = 'Naujas slaptažodis ir pakartojimas nesutampa.';
 			return;
 		}
 		displayedPasswordDots = '•'.repeat(newPassword.length);
@@ -35,7 +35,7 @@
 
 <div class="card-wrapper profile-view">
 	<article class="profile-card">
-		<h1 class="page-title">Edit profile</h1>
+		<h1 class="page-title">Redaguoti profilį</h1>
 		<header class="profile-header">
 			<div class="avatar-placeholder">
 				<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-subtle)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -44,10 +44,10 @@
 			</div>
 			<div class="user-meta">
 				{#if user}
-					<h1>{username || (user.username ?? 'Anonymous')}</h1>
+					<h1>{username || (user.username ?? 'Anonimas')}</h1>
 					<mark>UID: #{user.id}</mark>
 				{:else}
-					<h1>User not found</h1>
+					<h1>Vartotojas nerastas</h1>
 				{/if}
 			</div>
 		</header>
@@ -57,33 +57,33 @@
 				<form id="edit-profile-form" method="POST" action="?/updateProfile">
 					<div class="info-list">
 						<div class="info-item">
-							<span class="label">Username</span>
+							<span class="label">Vartotojo vardas</span>
 							<input name="username" type="text" bind:value={username} required class="value value-input" />
 						</div>
 						<div class="info-item">
-							<span class="label">Password</span>
+							<span class="label">Slaptažodis</span>
 							<span class="value value-password-row">
 								{#if displayedPasswordDots}
 									<span class="password-dots">{displayedPasswordDots}</span>
 								{/if}
-								<button type="button" class="btn-change" onclick={() => (showPasswordFields = true)}>Change</button>
+								<button type="button" class="btn-change" onclick={() => (showPasswordFields = true)}>Keisti</button>
 							</span>
 						</div>
 						<div class="info-item">
-							<span class="label">Account</span>
-							<button type="button" class="btn-change" onclick={confirmDeleteAccount}>Delete Account</button>
+							<span class="label">Paskyra</span>
+							<button type="button" class="btn-change" onclick={confirmDeleteAccount}>Ištrinti paskyrą</button>
 						</div>
 					</div>
 				</form>
 			{:else}
-				<p class="empty-msg">User not found. Return to profile.</p>
+				<p class="empty-msg">Vartotojas nerastas. Grįžti į profilį.</p>
 			{/if}
 		</section>
 
 		{#if user}
 			<footer class="action-buttons">
-				<a href="/app/profile" class="action-btn action-btn-cancel">Cancel</a>
-				<button type="submit" form="edit-profile-form" class="action-btn">Save</button>
+				<a href="/app/profile" class="action-btn action-btn-cancel">Atšaukti</a>
+				<button type="submit" form="edit-profile-form" class="action-btn">Išsaugoti</button>
 			</footer>
 		{/if}
 	</article>
@@ -91,18 +91,18 @@
 	{#if showPasswordFields}
 		<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="password-modal-title" onclick={closePasswordFields}>
 			<div class="modal-box" onclick={(e) => e.stopPropagation()}>
-				<h2 id="password-modal-title" class="modal-title">Change password</h2>
+				<h2 id="password-modal-title" class="modal-title">Keisti slaptažodį</h2>
 				<div class="password-change-fields">
 					<label class="password-label">
-						<span class="password-label-text">Current password</span>
+						<span class="password-label-text">Dabartinis slaptažodis</span>
 						<input type="password" bind:value={currentPassword} class="password-input" autocomplete="current-password" />
 					</label>
 					<label class="password-label">
-						<span class="password-label-text">New password</span>
+						<span class="password-label-text">Naujas slaptažodis</span>
 						<input type="password" bind:value={newPassword} class="password-input" autocomplete="new-password" />
 					</label>
 					<label class="password-label">
-						<span class="password-label-text">Confirm new password</span>
+						<span class="password-label-text">Pakartokite naują slaptažodį</span>
 						<input type="password" bind:value={confirmPassword} class="password-input" autocomplete="new-password" />
 					</label>
 				</div>
@@ -110,13 +110,13 @@
 					<p class="password-error" role="alert">{passwordMatchError}</p>
 				{/if}
 				<div class="modal-actions">
-					<button type="button" class="btn-change-cancel" onclick={closePasswordFields}>Cancel</button>
+					<button type="button" class="btn-change-cancel" onclick={closePasswordFields}>Atšaukti</button>
 					<button
 					type="button"
 					class="btn-change-save"
 					disabled={!currentPassword || !newPassword || !confirmPassword}
 					onclick={handleSavePassword}
-				>Save</button>
+				>Išsaugoti</button>
 				</div>
 			</div>
 		</div>
