@@ -28,7 +28,7 @@
 			</div>
 			<div class="nav-links">
 				<a href="/" class="nav-link" class:active={isActive('/')}>Pagrindinis</a>
-				<a href="/create" class="nav-link" class:active={isActive('/create')}>Kurti</a>
+				<a href="/app/create" class="nav-link" class:active={isActive('/create')}>Kurti</a>
                 <a href="/app/activities" class="nav-link" class:active={isActive('/app/activities')}>Veiklos</a>
 				<a href="/app/messages" class="nav-link" class:active={isActive('/app/messages')}>Žinutės <span class="notification-dot"></span></a>
                 <a href="/app/profile" class="user-menu" class:active={isActive('/app/profile')}>
