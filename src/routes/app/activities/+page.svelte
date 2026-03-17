@@ -58,11 +58,7 @@
 					{#if activity.image_src}
 						<img src={activity.image_src} alt={activity.name} />
 					{:else}
-						<div style="aspect-ratio: 1/1; background: var(--color-bg-secondary); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-lg);">
-							<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-subtle)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-							</svg>
-						</div>
+						<img src={'/images/article1.webp'}>
 					{/if}
 				</figure>
 
