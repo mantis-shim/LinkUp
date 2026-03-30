@@ -22,8 +22,41 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	updateProfile: async () => {
-		// TODO: validate and update user in DB, then redirect
-		return { success: false };
+	updateProfile: async ({ request, locals }) => {
+		const userId = locals.user?.id ?? 1;
+		const formData = await request.formData();
+		const usernameRaw = formData.get('username');
+		const username = typeof usernameRaw === 'string' ? usernameRaw.trim() : '';
+
+		if (!username) {
+			return fail(400, {
+				usernameError: 'Vartotojo vardas privalomas.',
+				username: ''
+			});
+		}
+
+		try {
+			const [taken] = await pool.query(
+				'SELECT id FROM users WHERE username = ? AND id != ?',
+				[username, userId]
+			);
+			const rows = taken as { id: number }[];
+			if (rows.length > 0) {
+				return fail(400, {
+					usernameError: 'Šis vartotojo vardas jau užimtas.',
+					username
+				});
+			}
+
+			await pool.query('UPDATE users SET username = ? WHERE id = ?', [username, userId]);
+		} catch {
+			console.error('Profilio atnaujinimas nepavyko.');
+			return fail(500, {
+				usernameError: 'Nepavyko išsaugoti. Bandykite dar kartą.',
+				username
+			});
+		}
+
+		throw redirect(303, '/app/profile');
 	}
 };
