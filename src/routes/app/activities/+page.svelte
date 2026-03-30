@@ -71,9 +71,9 @@
 					<header>
 						<div class="title-group">
 							<h1>{activity.name}</h1>
-							<small>By Creator #{activity.creator_id}</small>
+							<small>Sukūrė: #{activity.creator_id}</small>
 						</div>
-						<mark>Category #{activity.category_id}</mark>
+						<mark>Kategorija #{activity.category_id}</mark>
 					</header>
 
 					{#if activity.description}
@@ -82,21 +82,21 @@
 
 					<div class="info-list">
 						<div class="info-item">
-							<span class="label">Location</span>
+							<span class="label">Vieta</span>
 							<span class="value">{activity.location || 'Not set'}</span>
 						</div>
 						<div class="info-item">
-							<span class="label">Date</span>
+							<span class="label">Data</span>
 							<span class="value">{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : 'TBD'}</span>
 						</div>
 						<div class="info-item">
-							<span class="label">Gender</span>
-							<span class="value">{activity.gender_id || 'Any'}</span>
+							<span class="label">Lytis</span>
+							<span class="value">{activity.gender_id || '-'}</span>
 						</div>
 					</div>
 
 					<footer>
-						<small>Created {new Date(activity.created_at).toLocaleDateString()} (Index: {offset})</small>
+						<small>Paskelbta {new Date(activity.created_at).toLocaleDateString()}</small>
 					</footer>
 				</section>
 			</article>
