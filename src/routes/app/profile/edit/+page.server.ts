@@ -1,4 +1,5 @@
 import { pool } from '$lib/database/connection';
+import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -14,8 +15,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const raw = users[0] || null;
 		const user = raw ? { id: raw.id, username: String(raw.username) } : null;
 		return { user };
-	} catch (error) {
-		console.error('Profile edit load failed:', error);
+	} catch {
+		console.error('Profilio redagavimo užkrovimas nepavyko.');
 		return { user: null };
 	}
 };

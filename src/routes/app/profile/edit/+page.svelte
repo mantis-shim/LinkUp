@@ -1,7 +1,33 @@
 <script lang="ts">
-	let { data } = $props();
+	import { browser } from '$app/environment';
+
+	let { data, form } = $props();
 	let user = $derived(data.user);
 	let username = $state(data.user?.username ?? '');
+	let usernameErrorAlertKey = $state<string | null>(null);
+
+	$effect(() => {
+		if (!browser) return;
+		const msg = form?.usernameError;
+		if (!msg) {
+			usernameErrorAlertKey = null;
+			return;
+		}
+		const key = `${msg}\0${form.username ?? ''}`;
+		if (usernameErrorAlertKey === key) return;
+		usernameErrorAlertKey = key;
+		alert(msg);
+	});
+
+	$effect(() => {
+		if (form?.usernameError) {
+			username = data.user?.username ?? '';
+		} else if (form?.username !== undefined) {
+			username = form.username;
+		} else {
+			username = data.user?.username ?? '';
+		}
+	});
 	let showPasswordFields = $state(false);
 	let currentPassword = $state('');
 	let newPassword = $state('');
@@ -9,9 +35,7 @@
 	let displayedPasswordDots = $state('');
 	let passwordMatchError = $state('');
 	function confirmDeleteAccount() {
-		if (confirm('Ar tikrai norite ištrinti savo paskyrą?')) {
-			// No DB delete for now
-		}
+		if (!confirm('Ar tikrai norite ištrinti savo paskyrą?')) return;
 	}
 
 	function closePasswordFields() {
@@ -54,11 +78,13 @@
 
 		<section class="profile-content">
 			{#if user}
-				<form id="edit-profile-form" method="POST" action="?/updateProfile">
+				<form id="edit-profile-form" method="POST" action="?/updateProfile" novalidate>
 					<div class="info-list">
 						<div class="info-item">
 							<span class="label">Vartotojo vardas</span>
-							<input name="username" type="text" bind:value={username} required class="value value-input" />
+							<span class="value value-username-col">
+								<input name="username" type="text" bind:value={username} class="value value-input" />
+							</span>
 						</div>
 						<div class="info-item">
 							<span class="label">Slaptažodis</span>
@@ -353,6 +379,13 @@
 		margin: 0;
 		font-size: var(--text-sm);
 		color: var(--color-danger);
+	}
+
+	.value-username-col {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: var(--space-1);
 	}
 
 	.modal-actions {
