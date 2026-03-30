@@ -1,10 +1,27 @@
 <script lang="ts">
+	import type { ActionResult } from '@sveltejs/kit';
 	import { browser } from '$app/environment';
+	import { deserialize, enhance } from '$app/forms';
+	import { page } from '$app/state';
 
 	let { data, form } = $props();
 	let user = $derived(data.user);
 	let username = $state(data.user?.username ?? '');
 	let usernameErrorAlertKey = $state<string | null>(null);
+	let passwordErrorAlertKey = $state<string | null>(null);
+	let showPasswordFields = $state(false);
+	let currentPassword = $state('');
+	let newPassword = $state('');
+	let confirmPassword = $state('');
+	let pendingPasswordLength = $state<number | null>(null);
+	let pendingCurrentPassword = $state('');
+	let pendingNewPassword = $state('');
+	let pendingConfirmNew = $state('');
+
+	let passwordDotsCount = $derived(
+		pendingPasswordLength !== null ? pendingPasswordLength : (data.passwordCharCount ?? 0)
+	);
+	let passwordDotsDisplay = $derived('•'.repeat(passwordDotsCount));
 
 	$effect(() => {
 		if (!browser) return;
@@ -20,6 +37,19 @@
 	});
 
 	$effect(() => {
+		if (!browser) return;
+		const msg = form?.passwordError;
+		if (!msg) {
+			passwordErrorAlertKey = null;
+			return;
+		}
+		const key = `${msg}\0${form.username ?? ''}`;
+		if (passwordErrorAlertKey === key) return;
+		passwordErrorAlertKey = key;
+		alert(msg);
+	});
+
+	$effect(() => {
 		if (form?.usernameError) {
 			username = data.user?.username ?? '';
 		} else if (form?.username !== undefined) {
@@ -28,12 +58,7 @@
 			username = data.user?.username ?? '';
 		}
 	});
-	let showPasswordFields = $state(false);
-	let currentPassword = $state('');
-	let newPassword = $state('');
-	let confirmPassword = $state('');
-	let displayedPasswordDots = $state('');
-	let passwordMatchError = $state('');
+
 	function confirmDeleteAccount() {
 		if (!confirm('Ar tikrai norite ištrinti savo paskyrą?')) return;
 	}
@@ -43,17 +68,46 @@
 		currentPassword = '';
 		newPassword = '';
 		confirmPassword = '';
-		passwordMatchError = '';
 	}
 
-	function handleSavePassword() {
-		passwordMatchError = '';
-		if (!newPassword || newPassword !== confirmPassword) {
-			passwordMatchError = 'Naujas slaptažodis ir pakartojimas nesutampa.';
+	async function handleSavePassword() {
+		if (!currentPassword || !newPassword || !confirmPassword) return;
+		if (newPassword !== confirmPassword) {
+			alert('Naujas slaptažodis nesutampa su pakartotiniu slaptažodžiu.');
 			return;
 		}
-		displayedPasswordDots = '•'.repeat(newPassword.length);
+		const fd = new FormData();
+		fd.set('currentPassword', currentPassword);
+		const res = await fetch(`${page.url.pathname}?/verifyCurrentPassword`, {
+			method: 'POST',
+			body: fd
+		});
+		const result = deserialize(await res.text());
+		if (result.type === 'failure') {
+			const err = result.data?.verifyError;
+			alert(typeof err === 'string' ? err : 'Įvyko klaida.');
+			return;
+		}
+		pendingCurrentPassword = currentPassword;
+		pendingNewPassword = newPassword;
+		pendingConfirmNew = confirmPassword;
+		pendingPasswordLength = newPassword.length;
 		closePasswordFields();
+	}
+
+	function enhanceProfileForm() {
+		return async ({
+			result,
+			update
+		}: {
+			result: ActionResult;
+			update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void>;
+		}) => {
+			if (result.type === 'redirect') {
+				alert('Profilio duomenys sėkmingai atnaujinti!');
+			}
+			await update();
+		};
 	}
 </script>
 
@@ -78,7 +132,18 @@
 
 		<section class="profile-content">
 			{#if user}
-				<form id="edit-profile-form" method="POST" action="?/updateProfile" novalidate>
+				<form
+					id="edit-profile-form"
+					method="POST"
+					action="?/updateProfile"
+					novalidate
+					use:enhance={enhanceProfileForm}
+				>
+					{#if pendingNewPassword}
+						<input type="hidden" name="currentPasswordForChange" value={pendingCurrentPassword} />
+						<input type="hidden" name="newPassword" value={pendingNewPassword} />
+						<input type="hidden" name="confirmNewPassword" value={pendingConfirmNew} />
+					{/if}
 					<div class="info-list">
 						<div class="info-item">
 							<span class="label">Vartotojo vardas</span>
@@ -89,8 +154,8 @@
 						<div class="info-item">
 							<span class="label">Slaptažodis</span>
 							<span class="value value-password-row">
-								{#if displayedPasswordDots}
-									<span class="password-dots">{displayedPasswordDots}</span>
+								{#if passwordDotsCount > 0}
+									<span class="password-dots" aria-hidden="true">{passwordDotsDisplay}</span>
 								{/if}
 								<button type="button" class="btn-change" onclick={() => (showPasswordFields = true)}>Keisti</button>
 							</span>
@@ -132,16 +197,13 @@
 						<input type="password" bind:value={confirmPassword} class="password-input" autocomplete="new-password" />
 					</label>
 				</div>
-				{#if passwordMatchError}
-					<p class="password-error" role="alert">{passwordMatchError}</p>
-				{/if}
 				<div class="modal-actions">
 					<button type="button" class="btn-change-cancel" onclick={closePasswordFields}>Atšaukti</button>
 					<button
 					type="button"
 					class="btn-change-save"
 					disabled={!currentPassword || !newPassword || !confirmPassword}
-					onclick={handleSavePassword}
+					onclick={() => void handleSavePassword()}
 				>Išsaugoti</button>
 				</div>
 			</div>
@@ -369,16 +431,10 @@
 	}
 
 	.password-dots {
-		color: var(--color-text);
+		color: #000;
 		font-family: var(--font-mono);
 		font-size: var(--text-base);
 		letter-spacing: 0.05em;
-	}
-
-	.password-error {
-		margin: 0;
-		font-size: var(--text-sm);
-		color: var(--color-danger);
 	}
 
 	.value-username-col {

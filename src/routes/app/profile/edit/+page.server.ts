@@ -7,17 +7,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const userId = locals.user?.id ?? 1;
 
 		const [rows] = await pool.query(
-			'SELECT id, username FROM users WHERE id = ?',
+			'SELECT id, username, CHAR_LENGTH(password) AS password_char_count FROM users WHERE id = ?',
 			[userId]
 		);
 
-		const users = rows as { id: number; username: string }[];
+		const users = rows as { id: number; username: string; password_char_count: number }[];
 		const raw = users[0] || null;
 		const user = raw ? { id: raw.id, username: String(raw.username) } : null;
-		return { user };
+		const passwordCharCount = raw ? Number(raw.password_char_count) : 0;
+		return { user, passwordCharCount };
 	} catch {
 		console.error('Profilio redagavimo užkrovimas nepavyko.');
-		return { user: null };
+		return { user: null, passwordCharCount: 0 };
 	}
 };
 
@@ -27,12 +28,42 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const usernameRaw = formData.get('username');
 		const username = typeof usernameRaw === 'string' ? usernameRaw.trim() : '';
+		const newPasswordRaw = formData.get('newPassword');
+		const confirmNewRaw = formData.get('confirmNewPassword');
+		const currentForChangeRaw = formData.get('currentPasswordForChange');
+		const newPassword = typeof newPasswordRaw === 'string' ? newPasswordRaw : '';
+		const confirmNew = typeof confirmNewRaw === 'string' ? confirmNewRaw : '';
+		const currentForChange = typeof currentForChangeRaw === 'string' ? currentForChangeRaw : '';
+		const wantsPasswordChange = newPassword.length > 0;
 
 		if (!username) {
 			return fail(400, {
 				usernameError: 'Vartotojo vardas privalomas.',
 				username: ''
 			});
+		}
+
+		if (wantsPasswordChange) {
+			if (!currentForChange) {
+				return fail(400, {
+					passwordError: 'Trūksta dabartinio slaptažodžio.',
+					username
+				});
+			}
+			if (newPassword !== confirmNew) {
+				return fail(400, {
+					passwordError: 'Naujas slaptažodis nesutampa su pakartotiniu slaptažodžiu.',
+					username
+				});
+			}
+			const [pwRows] = await pool.query('SELECT password FROM users WHERE id = ?', [userId]);
+			const pwRow = (pwRows as { password: string }[])[0];
+			if (!pwRow || pwRow.password !== currentForChange) {
+				return fail(400, {
+					passwordError: 'Neteisingas dabartinis slaptažodis.',
+					username
+				});
+			}
 		}
 
 		try {
@@ -49,6 +80,9 @@ export const actions: Actions = {
 			}
 
 			await pool.query('UPDATE users SET username = ? WHERE id = ?', [username, userId]);
+			if (wantsPasswordChange) {
+				await pool.query('UPDATE users SET password = ? WHERE id = ?', [newPassword, userId]);
+			}
 		} catch {
 			console.error('Profilio atnaujinimas nepavyko.');
 			return fail(500, {
@@ -58,5 +92,20 @@ export const actions: Actions = {
 		}
 
 		throw redirect(303, '/app/profile');
+	},
+
+	verifyCurrentPassword: async ({ request, locals }) => {
+		const userId = locals.user?.id ?? 1;
+		const formData = await request.formData();
+		const currentRaw = formData.get('currentPassword');
+		const current = typeof currentRaw === 'string' ? currentRaw : '';
+
+		const [rows] = await pool.query('SELECT password FROM users WHERE id = ?', [userId]);
+		const row = (rows as { password: string }[])[0];
+		if (!row || row.password !== current) {
+			return fail(400, { verifyError: 'Neteisingas dabartinis slaptažodis.' });
+		}
+
+		return { success: true };
 	}
 };
