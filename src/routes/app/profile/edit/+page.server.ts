@@ -1,4 +1,5 @@
 import { pool } from '$lib/database/connection';
+import { deleteSession } from '$lib/server/session';
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -107,5 +108,60 @@ export const actions: Actions = {
 		}
 
 		return { success: true };
+	},
+
+	deleteAccount: async ({ locals, cookies }) => {
+		const userId = locals.user?.id;
+		if (!userId) {
+			throw redirect(303, '/login');
+		}
+
+		const sessionId = cookies.get('session');
+		const conn = await pool.getConnection();
+
+		try {
+			await conn.beginTransaction();
+
+			await conn.query('DELETE FROM sessions WHERE user_id = ?', [userId]);
+			await conn.query('DELETE FROM friendships WHERE user_id = ? OR friend_id = ?', [userId, userId]);
+			await conn.query('DELETE FROM messages WHERE sender_id = ?', [userId]);
+			await conn.query('DELETE FROM conversation_members WHERE user_id = ?', [userId]);
+			await conn.query(
+				`DELETE m FROM messages m
+				 WHERE NOT EXISTS (
+				   SELECT 1 FROM conversation_members cm WHERE cm.conversation_id = m.conversation_id
+				 )`
+			);
+			await conn.query(
+				`DELETE c FROM conversations c
+				 WHERE NOT EXISTS (
+				   SELECT 1 FROM conversation_members cm WHERE cm.conversation_id = c.id
+				 )`
+			);
+			await conn.query('DELETE FROM activity_participants WHERE user_id = ?', [userId]);
+			await conn.query(
+				'DELETE FROM activity_participants WHERE activity_id IN (SELECT id FROM activities WHERE creator_id = ?)',
+				[userId]
+			);
+			await conn.query('DELETE FROM activities WHERE creator_id = ?', [userId]);
+			await conn.query('DELETE FROM users WHERE id = ?', [userId]);
+
+			await conn.commit();
+		} catch {
+			await conn.rollback();
+			console.error('Paskyros ištrynimas nepavyko.');
+			return fail(500, {
+				deleteError: 'Nepavyko ištrinti paskyros. Bandykite dar kartą.'
+			});
+		} finally {
+			conn.release();
+		}
+
+		if (sessionId) {
+			await deleteSession(sessionId);
+		}
+		cookies.delete('session', { path: '/' });
+
+		throw redirect(303, '/login');
 	}
 };

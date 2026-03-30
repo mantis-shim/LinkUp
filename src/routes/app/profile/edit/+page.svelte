@@ -2,6 +2,7 @@
 	import type { ActionResult } from '@sveltejs/kit';
 	import { browser } from '$app/environment';
 	import { deserialize, enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 
 	let { data, form } = $props();
@@ -59,8 +60,22 @@
 		}
 	});
 
-	function confirmDeleteAccount() {
+	async function confirmDeleteAccount() {
+		if (!browser) return;
 		if (!confirm('Ar tikrai norite ištrinti savo paskyrą?')) return;
+		const res = await fetch(`${page.url.pathname}?/deleteAccount`, {
+			method: 'POST',
+			body: new FormData()
+		});
+		const result = deserialize(await res.text());
+		if (result.type === 'redirect') {
+			await goto(result.location);
+			return;
+		}
+		if (result.type === 'failure') {
+			const err = result.data?.deleteError;
+			alert(typeof err === 'string' ? err : 'Nepavyko ištrinti paskyros.');
+		}
 	}
 
 	function closePasswordFields() {
@@ -162,7 +177,7 @@
 						</div>
 						<div class="info-item">
 							<span class="label">Paskyra</span>
-							<button type="button" class="btn-change" onclick={confirmDeleteAccount}>Ištrinti paskyrą</button>
+							<button type="button" class="btn-change" onclick={() => void confirmDeleteAccount()}>Ištrinti paskyrą</button>
 						</div>
 					</div>
 				</form>
