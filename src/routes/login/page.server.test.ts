@@ -24,8 +24,20 @@ describe('login actions', () => {
 		const mockUser = { id: 1, username: 'testuser', password: 'testpass' };
 		const mockSessionId = 'session123';
 
-		(pool.execute as any).mockResolvedValue([[mockUser]]);
-		(createSession as any).mockResolvedValue(mockSessionId);
+		// Make the pool.execute return a user for SELECT query
+		(pool.execute as any).mockImplementation((sql: string, params: any[]) => {
+			if (sql.startsWith('SELECT * FROM users')) {
+				return Promise.resolve([[mockUser]]);
+			} else {
+				// Any other query (like INSERT) throws an error
+				return Promise.reject(new Error('Invalid SQL'));
+			}
+		});
+
+		(createSession as any).mockImplementation(async (userId: number) => {
+			if (userId !== 1) throw new Error('Invalid userId');
+			return mockSessionId;
+		});
 
 		const mockRequest = {
 			formData: vi.fn().mockResolvedValue({
