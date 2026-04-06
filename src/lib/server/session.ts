@@ -9,10 +9,10 @@ export async function createSession(userId: number) {
     const id = generateSessionId();
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
 
-    /*await pool.execute(
-        'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
+    await pool.execute(
+        'INSERT INTO sessions (id, user_id, expires_at) VALUES (?)',
         [id, userId, expiresAt]
-    );*/
+    );
     return id;
 }
 
