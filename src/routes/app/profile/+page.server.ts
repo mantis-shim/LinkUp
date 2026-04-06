@@ -1,17 +1,22 @@
 import { pool } from '$lib/database/connection';
 import type { PageServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
     try {
-        // session user ID fallback
-        const userId = locals.user?.id ?? 1;
+        // AC2: Tik prisijungęs vartotojas mato savo profilio informaciją.
+        if (!locals.user) {
+            throw redirect(302, '/login');
+        }
+
+        const userId = locals.user.id;
         const category = url.searchParams.get('category') || 'created';
 
         console.log(`Fetching profile for id ${userId} category=${category}`);
 
-        // Fetch user data
+        // AC1 fields: id, username, first_name, last_name, email, city
         const [rows] = await pool.query(
-            'SELECT id, username FROM users WHERE id = ?',
+            'SELECT id, username, first_name, last_name, email, city, created_at FROM users WHERE id = ?',
             [userId]
         );
 
@@ -34,8 +39,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
             activitiesQuery = 'SELECT * FROM activities WHERE creator_id = ? AND starts_at IS NOT NULL AND starts_at < NOW() ORDER BY starts_at DESC';
         } else if (category === 'upcoming') {
             activitiesQuery = 'SELECT * FROM activities WHERE creator_id = ? AND starts_at IS NOT NULL AND starts_at >= NOW() ORDER BY starts_at ASC';
-        } else if (category === 'created') {
-            activitiesQuery = 'SELECT * FROM activities WHERE creator_id = ? ORDER BY starts_at DESC, created_at DESC';
         }
 
         const [activityRows] = await pool.query(activitiesQuery, params);
@@ -49,12 +52,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         };
 
     } catch (error: any) {
+        if (error?.status === 302) throw error; 
+
         console.error('Profile fetch failed:', error);
         return {
             dbStatus: 'Error',
             error: error.message,
             user: null,
-
+            activities: []
         };
     }
 };
