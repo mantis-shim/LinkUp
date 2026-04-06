@@ -42,7 +42,9 @@ jobs:
         run: npm ci
  
       - name: Run login page tests
-        run: npx vitest run src/routes/login/page.server.test.ts --reporter=verbose --reporter=json --outputFile=test-results.json
+        run: npx vitest run --reporter=verbose --reporter=json --outputFile=test-results.json
+
+
 
       - name: Upload test results
         if: always()
