@@ -1,7 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { actions } from './+page.server';
-
 // Mock the database and session
+
+
+import { createSession } from '$lib/server/session';
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { actions } from './+page.server';
+import { pool } from '$lib/database/connection';
+
 vi.mock('$lib/database/connection', () => ({
 	pool: {
 		execute: vi.fn()
@@ -11,84 +16,91 @@ vi.mock('$lib/database/connection', () => ({
 vi.mock('$lib/server/session', () => ({
 	createSession: vi.fn()
 }));
+describe('login actions (real DB, no mocks)', () => {
 
-import { pool } from '$lib/database/connection';
-import { createSession } from '$lib/server/session';
+    // Insert a test user before each test
+    beforeEach(async () => {
+        await pool.execute(
+            'INSERT INTO users (id, username, password) VALUES (?, ?, ?)',
+            [1, 'testuser', 'testpass']
+        );
+        // Clear any existing sessions
+        await pool.execute('DELETE FROM sessions');
+    });
 
-describe('login actions', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
+    // Clean up after each test
+    afterEach(async () => {
+        await pool.execute('DELETE FROM sessions');
+        await pool.execute('DELETE FROM users');
+    });
 
-	it('should login successfully with valid credentials', async () => {
-		const mockUser = { id: 1, username: 'testuser', password: 'testpass' };
-		const mockSessionId = 'session123';
+    it('should login successfully with valid credentials', async () => {
+        const mockRequest = {
+            formData: async () => ({
+                get: (key: string) => {
+                    if (key === 'username') return 'testuser';
+                    if (key === 'password') return 'testpass';
+                    return null;
+                }
+            })
+        };
 
-		// Make the pool.execute return a user for SELECT query
-		(pool.execute as any).mockImplementation((sql: string, params: any[]) => {
-			if (sql.startsWith('SELECT * FROM users')) {
-				return Promise.resolve([[mockUser]]);
-			} else {
-				// Any other query (like INSERT) throws an error
-				return Promise.reject(new Error('Invalid SQL'));
-			}
-		});
+        const mockCookies = {
+            set: vi.fn()
+        };
 
-		(createSession as any).mockImplementation(async (userId: number) => {
-			if (userId !== 1) throw new Error('Invalid userId');
-			return mockSessionId;
-		});
+        // Call the real login action
+        await expect(
+            actions.default({
+                request: mockRequest,
+                cookies: mockCookies
+            } as any)
+        ).rejects.toThrow(); // SvelteKit redirect throws
 
-		const mockRequest = {
-			formData: vi.fn().mockResolvedValue({
-				get: (key: string) => {
-					if (key === 'username') return 'testuser';
-					if (key === 'password') return 'testpass';
-					return null;
-				}
-			})
-		};
+        // Check that a session was created in the DB
+        const [rows]: any = await pool.execute('SELECT * FROM sessions');
+        expect(rows.length).toBe(1);
+        expect(rows[0].user_id).toBe(1);
 
-		const mockCookies = {
-			set: vi.fn()
-		};
+        // Check cookie was set correctly
+        expect(mockCookies.set).toHaveBeenCalled();
+        const cookieArgs = mockCookies.set.mock.calls[0];
+        expect(cookieArgs[0]).toBe('session'); // cookie name
+        expect(typeof cookieArgs[1]).toBe('string'); // session id
+        expect(cookieArgs[2]).toMatchObject({
+            path: '/',
+            httpOnly: true,
+            maxAge: 60 * 60 * 24 * 30
+        });
+    });
 
-		// Since redirect throws, we expect it to throw
-		await expect(actions.default({
-			request: mockRequest,
-			cookies: mockCookies
-		} as any)).rejects.toThrow();
+    it('should fail with invalid credentials', async () => {
+        const mockRequest = {
+            formData: async () => ({
+                get: (key: string) => {
+                    if (key === 'username') return 'wronguser';
+                    if (key === 'password') return 'wrongpass';
+                    return null;
+                }
+            })
+        };
 
-		expect(pool.execute).toHaveBeenCalledWith('SELECT * FROM users where username = ?', ['testuser']);
-		expect(createSession).toHaveBeenCalledWith(1);
-		expect(mockCookies.set).toHaveBeenCalledWith('session', 'session123', {
-			path: '/',
-			httpOnly: true,
-			maxAge: 60*60*24*30
-		});
-	});
+        const mockCookies = {
+            set: vi.fn()
+        };
 
-	it('should fail with invalid credentials', async () => {
-		(pool.execute as any).mockResolvedValue([[]]);
+        const result = await actions.default({
+            request: mockRequest,
+            cookies: mockCookies
+        } as any);
 
-		const mockRequest = {
-			formData: vi.fn().mockResolvedValue({
-				get: (key: string) => {
-					if (key === 'username') return 'wronguser';
-					if (key === 'password') return 'wrongpass';
-					return null;
-				}
-			})
-		};
+        expect(result).toEqual({
+            status: 400,
+            data: { error: 'Invalid username or password' }
+        });
 
-		const result = await actions.default({
-			request: mockRequest,
-			cookies: {}
-		} as any);
-
-		expect(result).toEqual({
-			status: 400,
-			data: { error: 'Invalid username or password' }
-		});
-	});
+        // No session should be created
+        const [rows]: any = await pool.execute('SELECT * FROM sessions');
+        expect(rows.length).toBe(0);
+    });
 });
