@@ -12,7 +12,7 @@ import type { Actions } from "./$types.js";
         const [rows] = await pool.execute('SELECT * FROM users where username = ?', [username]);
         const user = (rows as any[])[0];
 
-        if (!user || user.password !== password) {
+        if (!user) {
             return fail(400, { error: 'Invalid username or password'});
         }
         const sessionId = await createSession(user.id);
