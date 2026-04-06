@@ -7,15 +7,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { actions } from './+page.server';
 import { pool } from '$lib/database/connection';
 
-vi.mock('$lib/database/connection', () => ({
-	pool: {
-		execute: vi.fn()
-	}
-}));
-
-vi.mock('$lib/server/session', () => ({
-	createSession: vi.fn()
-}));
 describe('login actions (real DB, no mocks)', () => {
 
     // Insert a test user before each test
