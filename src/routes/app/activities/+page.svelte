@@ -8,6 +8,17 @@
 	let activity = $derived(data.activity);
 	let offset = $derived(data.offset);
 	let hasMore = $derived(data.hasMore);
+	let categories = $derived(data.categories || []);
+	let genders = $derived(data.genders || []);
+	let locations = $derived(data.locations || []);
+	let filters = $derived(data.filters || {});
+
+	// Track filter state
+	let selectedCategory = $state(filters.category);
+	let selectedLocation = $state(filters.location);
+	let selectedGender = $state(filters.gender);
+	let selectedStartDate = $state(filters.startDate);
+	let selectedEndDate = $state(filters.endDate);
 
 	// Tracking direction for transition
 	let direction = $state(1); // 1 for right, -1 for left
@@ -16,16 +27,113 @@
 		if (!hasMore) return;
 		direction = 1;
 		const nextOffset = offset + 1;
-		goto(`?offset=${nextOffset}`, { replaceState: false, keepFocus: true, noScroll: true });
+		goto(`?offset=${nextOffset}${getFilterParams()}`, { replaceState: false, keepFocus: true, noScroll: true });
 	}
 
 	function goToPrev() {
 		if (offset <= 0) return;
 		direction = -1;
 		const prevOffset = offset - 1;
-		goto(`?offset=${prevOffset}`, { replaceState: false, keepFocus: true, noScroll: true });
+		goto(`?offset=${prevOffset}${getFilterParams()}`, { replaceState: false, keepFocus: true, noScroll: true });
+	}
+
+	function getFilterParams() {
+		const params = [];
+		if (selectedCategory) params.push(`category=${selectedCategory}`);
+		if (selectedLocation) params.push(`location=${encodeURIComponent(selectedLocation)}`);
+		if (selectedGender) params.push(`gender=${selectedGender}`);
+		if (selectedStartDate) params.push(`startDate=${selectedStartDate}`);
+		if (selectedEndDate) params.push(`endDate=${selectedEndDate}`);
+		return params.length > 0 ? '&' + params.join('&') : '';
+	}
+
+	function applyFilters() {
+		goto(`?offset=0${getFilterParams()}`, { replaceState: true });
+	}
+
+	function resetFilters() {
+		selectedCategory = '';
+		selectedLocation = '';
+		selectedGender = '';
+		selectedStartDate = '';
+		selectedEndDate = '';
+		goto('?offset=0', { replaceState: true });
 	}
 </script>
+
+<div class="filters-container">
+	<div class="filters-panel">
+		<div class="filters-header">
+			<h2>Filtrai</h2>
+			<div class="button-group">
+				<button class="filter-btn" onclick={applyFilters}>Filtruoti</button>
+				{#if selectedCategory || selectedLocation || selectedGender || selectedStartDate || selectedEndDate}
+					<button class="reset-btn" onclick={resetFilters}>Atsatyti</button>
+				{/if}
+			</div>
+		</div>
+
+		<div class="filters-grid">
+			<!-- Category Filter -->
+			<div class="filter-group">
+				<label for="category">Kategorija</label>
+				<select id="category" bind:value={selectedCategory}>
+					<option value="">Visos kategorijos</option>
+					{#each categories as cat}
+						<option value={cat.id}>{cat.name}</option>
+					{/each}
+				</select>
+			</div>
+
+			<!-- Location Filter -->
+			<div class="filter-group">
+				<label for="location">Vieta</label>
+				<select id="location" bind:value={selectedLocation}>
+					<option value="">Visos vietos</option>
+					{#each locations as loc}
+						<option value={loc.location}>{loc.location}</option>
+					{/each}
+				</select>
+			</div>
+
+			<!-- Gender Filter -->
+			<div class="filter-group">
+				<label for="gender">Lytis</label>
+				<select id="gender" bind:value={selectedGender}>
+					<option value="">Visos</option>
+					{#each genders as gen}
+						<option value={gen.id}>{gen.name}</option>
+					{/each}
+				</select>
+			</div>
+
+			<!-- Date Range Filters -->
+			<div class="filter-group">
+				<label for="startDate">Nuo</label>
+				<input 
+					type="date" 
+					id="startDate" 
+					bind:value={selectedStartDate}
+				/>
+			</div>
+
+			<div class="filter-group">
+				<label for="endDate">Iki</label>
+				<input 
+					type="date" 
+					id="endDate" 
+					bind:value={selectedEndDate}
+				/>
+			</div>
+		</div>
+
+		{#if data.totalCount !== undefined}
+			<div class="results-info">
+				Rasta {data.totalCount} {data.totalCount === 1 ? 'veikla' : 'veiklos'}
+			</div>
+		{/if}
+	</div>
+</div>
 
 <div class="card-wrapper">
 	{#if activity}
@@ -371,5 +479,168 @@
 		padding-top: var(--space-4);
 		text-align: center;
 	}
+
+	/* Filter Styles */
+	.filters-container {
+		width: 100%;
+		background: var(--color-bg);
+		padding: var(--space-8) 0;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.filters-panel {
+		max-width: var(--max-w-4xl);
+		margin: 0 auto;
+		padding: 0 var(--space-8);
+	}
+
+	.filters-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-6);
+	}
+
+	.filters-header h2 {
+		font-size: var(--text-2xl);
+		font-weight: var(--font-bold);
+		color: var(--color-text);
+		margin: 0;
+	}
+
+	.reset-btn {
+		padding: var(--space-2) var(--space-4);
+		background: var(--color-bg-secondary);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		font-size: var(--text-sm);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.reset-btn:hover {
+		background: var(--color-border);
+		transform: translateY(-2px);
+	}
+
+	.button-group {
+		display: flex;
+		gap: var(--space-3);
+		align-items: center;
+	}
+
+	.filter-btn {
+		padding: var(--space-2) var(--space-4);
+		background: var(--color-primary);
+		color: white;
+		border: 1px solid var(--color-primary);
+		border-radius: var(--radius-lg);
+		font-size: var(--text-sm);
+		font-weight: var(--font-semibold);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.filter-btn:hover {
+		background: var(--color-primary-dark);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-md);
+	}
+
+	.filters-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: var(--space-4);
+		margin-bottom: var(--space-6);
+	}
+
+	.filter-group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.filter-group label {
+		font-size: var(--text-sm);
+		font-weight: var(--font-semibold);
+		color: var(--color-text);
+		text-transform: capitalize;
+	}
+
+	.filter-group select,
+	.filter-group input[type="date"] {
+		padding: var(--space-3) var(--space-3);
+		background: var(--color-surface);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		font-size: var(--text-sm);
+		font-family: inherit;
+		transition: all 0.2s ease;
+		cursor: pointer;
+	}
+
+	.filter-group select:hover,
+	.filter-group input[type="date"]:hover {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+	}
+
+	.filter-group select:focus,
+	.filter-group input[type="date"]:focus {
+		outline: none;
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.15);
+	}
+
+	.filter-group input[type="date"]::placeholder {
+		color: var(--color-text-muted);
+	}
+
+	.results-info {
+		font-size: var(--text-sm);
+		color: var(--color-text-subtle);
+		text-align: center;
+		padding: var(--space-4);
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-lg);
+	}
+
+	/* Responsive adjustments */
+	@media (max-width: 768px) {
+		.filters-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.filters-panel {
+			padding: 0 var(--space-4);
+		}
+
+		.filters-header h2 {
+			font-size: var(--text-xl);
+		}
+	}
+
+	@media (max-width: 480px) {
+		.filters-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.filters-container {
+			padding: var(--space-4) 0;
+		}
+
+		.filters-panel {
+			padding: 0 var(--space-4);
+		}
+
+		.filters-header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: var(--space-3);
+		}
+	}
+
 </style>
 

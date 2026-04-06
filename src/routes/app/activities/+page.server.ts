@@ -1,31 +1,63 @@
 import { pool } from '$lib/database/connection';
 import type { PageServerLoad } from './$types';
 import type { Activity } from '$lib/types';
+import type { RowDataPacket } from 'mysql2';
 
 export const load: PageServerLoad = async ({ url }) => {
     try {
         const limit = 1;
         const offset = Number(url.searchParams.get('offset')) || 0;
-        
-        console.log(`Fetching activity with offset ${offset}...`);
-        
-        // Fetch exactly one activity
-        const [rows] = await pool.query(
-            'SELECT * FROM activities ORDER BY created_at DESC LIMIT 1 OFFSET ?',
-            [offset]
+        const category = url.searchParams.get('category');
+        const location = url.searchParams.get('location');
+        const gender = url.searchParams.get('gender');
+        const startDate = url.searchParams.get('startDate');
+        const endDate = url.searchParams.get('endDate');
+
+        let filterQuery = 'WHERE 1=1';
+        const params: any[] = [];
+
+        if (category)   { filterQuery += ' AND category_id = ?'; params.push(category); }
+        if (location)   { filterQuery += ' AND location = ?';     params.push(location); }
+        if (gender)     { filterQuery += ' AND gender_id = ?';    params.push(gender); }
+        if (startDate)  { filterQuery += ' AND DATE(starts_at) >= ?'; params.push(startDate); }
+        if (endDate)    { filterQuery += ' AND DATE(starts_at) <= ?'; params.push(endDate); }
+
+        // ✅ Provide the generic so TypeScript knows the result is a row array, not OkPacket
+        const [rows] = await pool.query<RowDataPacket[]>(
+            `SELECT * FROM activities ${filterQuery} ORDER BY created_at DESC LIMIT 1 OFFSET ?`,
+            [...params, offset]
         );
 
-        // Fetch total count to know if there's a next one
-        const [countRows] = await pool.query('SELECT COUNT(*) as count FROM activities');
-        const totalCount = (countRows as any)[0].count;
-        
+        const [countRows] = await pool.query<RowDataPacket[]>(
+            `SELECT COUNT(*) as count FROM activities ${filterQuery}`,
+            params
+        );
+        const totalCount = countRows[0].count;
+
+        const [categories] = await pool.query<RowDataPacket[]>('SELECT id, name FROM categories ORDER BY name');
+        const [genders]    = await pool.query<RowDataPacket[]>('SELECT id, name FROM genders ORDER BY name');
+        const [locations]  = await pool.query<RowDataPacket[]>(
+            'SELECT DISTINCT location FROM activities WHERE location IS NOT NULL ORDER BY location'
+        );
+
         const activities = rows as Activity[];
-        
+
         return {
             dbStatus: 'Connected',
             activity: activities[0] || null,
-            offset: offset,
-            hasMore: offset + 1 < totalCount
+            offset,
+            hasMore: offset + 1 < totalCount,
+            totalCount,
+            categories,
+            genders,
+            locations,
+            filters: {
+                category:  category  || '',
+                location:  location  || '',
+                gender:    gender    || '',
+                startDate: startDate || '',
+                endDate:   endDate   || ''
+            }
         };
     } catch (error: any) {
         console.error('Database fetch failed:', error);
@@ -33,13 +65,11 @@ export const load: PageServerLoad = async ({ url }) => {
             dbStatus: 'Error',
             error: error.message,
             activity: null,
-            offset: 0
+            offset: 0,
+            categories: [],
+            genders: [],
+            locations: [],
+            filters: { category: '', location: '', gender: '', startDate: '', endDate: '' }
         };
     }
 };
-
-// Handle API requests (SvelteKit Actions or handle function could also work, 
-// but for simple fetch we can use a standalone endpoint or just check headers in load)
-// For simplicity in SvelteKit 2, we should use a +server.ts for the fetch calls 
-// but I'll add an export for the fetch logic here if needed, 
-// or let the user know we need a +server.ts.
