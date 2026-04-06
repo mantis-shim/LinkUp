@@ -97,7 +97,7 @@
 				<div class="filter-group">
 					<label for="gender">Lytis</label>
 					<select id="gender" name="gender" bind:value={selectedGender}>
-						<option value="">Visos</option>
+						<option value="">All</option>
 						{#each genders as gen}
 							<option value={gen.id}>{gen.name}</option>
 						{/each}
