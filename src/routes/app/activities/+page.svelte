@@ -47,10 +47,6 @@
 		return params.length > 0 ? '&' + params.join('&') : '';
 	}
 
-	function applyFilters() {
-		goto(`?offset=0${getFilterParams()}`, { replaceState: true });
-	}
-
 	function resetFilters() {
 		selectedCategory = '';
 		selectedLocation = '';
@@ -62,77 +58,81 @@
 </script>
 
 <div class="filters-container">
-	<div class="filters-panel">
-		<div class="filters-header">
-			<h2>Filtrai</h2>
-			<div class="button-group">
-				<button class="filter-btn" onclick={applyFilters}>Filtruoti</button>
-				{#if selectedCategory || selectedLocation || selectedGender || selectedStartDate || selectedEndDate}
-					<button class="reset-btn" onclick={resetFilters}>Atsatyti</button>
-				{/if}
+	<form method="GET" action="?">
+		<div class="filters-panel">
+			<div class="filters-header">
+				<h2>Filtrai</h2>
+				<div class="button-group">
+					<button type="submit" class="filter-btn">Filtruoti</button>
+					{#if selectedCategory || selectedLocation || selectedGender || selectedStartDate || selectedEndDate}
+						<button type="button" class="reset-btn" onclick={resetFilters}>Atsatyti</button>
+					{/if}
+				</div>
 			</div>
+
+			<div class="filters-grid">
+				<!-- Category Filter -->
+				<div class="filter-group">
+					<label for="category">Kategorija</label>
+					<select id="category" name="category" bind:value={selectedCategory}>
+						<option value="">Visos kategorijos</option>
+						{#each categories as cat}
+							<option value={cat.id}>{cat.name}</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Location Filter -->
+				<div class="filter-group">
+					<label for="location">Vieta</label>
+					<select id="location" name="location" bind:value={selectedLocation}>
+						<option value="">Visos vietos</option>
+						{#each locations as loc}
+							<option value={loc.location}>{loc.location}</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Gender Filter -->
+				<div class="filter-group">
+					<label for="gender">Lytis</label>
+					<select id="gender" name="gender" bind:value={selectedGender}>
+						<option value="">Visos</option>
+						{#each genders as gen}
+							<option value={gen.id}>{gen.name}</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Date Range Filters -->
+				<div class="filter-group">
+					<label for="startDate">Nuo</label>
+					<input 
+						type="date" 
+						id="startDate" 
+						name="startDate"
+						bind:value={selectedStartDate}
+					/>
+				</div>
+
+				<div class="filter-group">
+					<label for="endDate">Iki</label>
+					<input 
+						type="date" 
+						id="endDate" 
+						name="endDate"
+						bind:value={selectedEndDate}
+					/>
+				</div>
+			</div>
+
+			{#if data.totalCount !== undefined}
+				<div class="results-info">
+					Rasta {data.totalCount} {data.totalCount === 1 ? 'veikla' : 'veiklos'}
+				</div>
+			{/if}
 		</div>
-
-		<div class="filters-grid">
-			<!-- Category Filter -->
-			<div class="filter-group">
-				<label for="category">Kategorija</label>
-				<select id="category" bind:value={selectedCategory}>
-					<option value="">Visos kategorijos</option>
-					{#each categories as cat}
-						<option value={cat.id}>{cat.name}</option>
-					{/each}
-				</select>
-			</div>
-
-			<!-- Location Filter -->
-			<div class="filter-group">
-				<label for="location">Vieta</label>
-				<select id="location" bind:value={selectedLocation}>
-					<option value="">Visos vietos</option>
-					{#each locations as loc}
-						<option value={loc.location}>{loc.location}</option>
-					{/each}
-				</select>
-			</div>
-
-			<!-- Gender Filter -->
-			<div class="filter-group">
-				<label for="gender">Lytis</label>
-				<select id="gender" bind:value={selectedGender}>
-					<option value="">Visos</option>
-					{#each genders as gen}
-						<option value={gen.id}>{gen.name}</option>
-					{/each}
-				</select>
-			</div>
-
-			<!-- Date Range Filters -->
-			<div class="filter-group">
-				<label for="startDate">Nuo</label>
-				<input 
-					type="date" 
-					id="startDate" 
-					bind:value={selectedStartDate}
-				/>
-			</div>
-
-			<div class="filter-group">
-				<label for="endDate">Iki</label>
-				<input 
-					type="date" 
-					id="endDate" 
-					bind:value={selectedEndDate}
-				/>
-			</div>
-		</div>
-
-		{#if data.totalCount !== undefined}
-			<div class="results-info">
-				Rasta {data.totalCount} {data.totalCount === 1 ? 'veikla' : 'veiklos'}
-			</div>
-		{/if}
-	</div>
+	</form>
 </div>
 
 <div class="card-wrapper">
