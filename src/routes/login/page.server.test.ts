@@ -90,7 +90,7 @@ describe('login action', () => {
             await expect(actions.default(ctx)).rejects.toMatchObject({ isRedirect: true });
 
             expect(pool.execute).toHaveBeenCalledWith(
-                expect.stringContaining('WHERE username = ?'),
+                expect.stringContaining('where username = ?'),
                 ['alice']
             );
         });
