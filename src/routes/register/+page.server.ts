@@ -9,7 +9,6 @@ export const actions: Actions = {
         const username = data.get('username') as string;
         const password = data.get('password') as string;
 
-        // Basic validation
         if (!username || username.trim().length < 3) {
             return fail(400, { error: 'Username must be at least 3 characters' });
         }
