@@ -10,8 +10,8 @@ export async function createSession(userId: number) {
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
 
     await pool.execute(
-        'INSERT INTO x (id, user_id, expires_at) VALUES (?)',
-        [id, userId, "random_value"]
+        'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
+        [id, userId, expiresAt]
     );
     return id;
 }
