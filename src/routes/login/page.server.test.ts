@@ -43,9 +43,9 @@ describe('login actions', () => {
 
 		// Since redirect throws, we expect it to throw
 		await expect(actions.default({
-			request: mockRequest as any,
-			cookies: mockCookies as any
-		})).rejects.toThrow();
+			request: mockRequest,
+			cookies: mockCookies
+		} as any)).rejects.toThrow();
 
 		expect(pool.execute).toHaveBeenCalledWith('SELECT * FROM users where username = ?', ['testuser']);
 		expect(createSession).toHaveBeenCalledWith(1);
@@ -70,9 +70,9 @@ describe('login actions', () => {
 		};
 
 		const result = await actions.default({
-			request: mockRequest as any,
-			cookies: {} as any
-		});
+			request: mockRequest,
+			cookies: {}
+		} as any);
 
 		expect(result).toEqual({
 			status: 400,
