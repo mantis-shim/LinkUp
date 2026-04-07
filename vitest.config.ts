@@ -3,16 +3,12 @@ import { defineConfig } from 'vitest/config';
 import path from 'path';
 
 export default defineConfig({
-  resolve: {
-  alias: [
-    { find: '$lib', replacement: path.resolve(__dirname, './src/lib') },
-    {
-      find: /^\$env\/dynamic\/private$/,
-      replacement: path.resolve(__dirname, './vitest-env-mock.ts')
-    }
-  ]
-},
-  test: {
-    environment: 'node'
-  }
+	test: {
+		include: ['src/**/*.server.test.ts', 'src/**/page.server.test.ts'],
+		environment: 'node',
+		globals: true,
+		alias: {
+			$lib: path.resolve(__dirname, './src/lib')
+		}
+	}
 });

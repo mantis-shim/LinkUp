@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { getTomorrowAlert } from './tomorrow-alert';
+
 	let { data } = $props();
 
 	const user = $derived(() => (data as any).user || null);
@@ -6,26 +8,8 @@
 	let selectedCategory = $state<'created' | 'past' | 'upcoming'>('created');
 	let tomorrowAlert = $state<string | null>(null);
 
-	function isTomorrow(dateString: string) {
-		const now = new Date();
-		const tomorrow = new Date(now);
-		tomorrow.setDate(now.getDate() + 1);
-		const date = new Date(dateString);
-		return (
-			date.getFullYear() === tomorrow.getFullYear() &&
-			date.getMonth() === tomorrow.getMonth() &&
-			date.getDate() === tomorrow.getDate()
-		);
-	}
-
 	$effect(() => {
-		tomorrowAlert = null;
-		for (const activity of activities()) {
-			if (activity.starts_at && isTomorrow(activity.starts_at)) {
-				tomorrowAlert = `Įvykis "${activity.name ?? 'Be pavadinimo'}" prasideda rytoj!`;
-				break;
-			}
-		}
+		tomorrowAlert = getTomorrowAlert(activities());
 	});
 
 	function getFilteredActivities() {
@@ -57,6 +41,10 @@
 				<div class="user-meta">
 					<h1>{user().username ?? "Anonymous"}</h1>
 					<mark>UID: #{user().id ?? "???"}</mark>
+					{#if user().first_name || user().last_name}
+						<p class="full-name">{user().first_name ?? ''} {user().last_name ?? ''}</p>
+					{/if}
+					<p class="contact-info">{user().email ?? 'Nenurodyta'} · {user().city ?? 'Miestas nenurodytas'}</p>
 				</div>
 			</header>
 
