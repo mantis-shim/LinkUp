@@ -41,6 +41,10 @@
 				<div class="user-meta">
 					<h1>{user().username ?? "Anonymous"}</h1>
 					<mark>UID: #{user().id ?? "???"}</mark>
+					{#if user().first_name || user().last_name}
+						<p class="full-name">{user().first_name ?? ''} {user().last_name ?? ''}</p>
+					{/if}
+					<p class="contact-info">{user().email ?? 'Nenurodyta'} · {user().city ?? 'Miestas nenurodytas'}</p>
 				</div>
 			</header>
 
