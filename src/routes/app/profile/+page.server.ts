@@ -10,8 +10,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
         const userId = locals.user.id;
 
+        // AC1 fields: id, username, name, lastname, email, city
         const [rows] = await pool.query(
-            'SELECT id, username FROM users WHERE id = ?',
+            'SELECT id, username, name, lastname, email, city FROM users WHERE id = ?',
             [userId]
         );
 

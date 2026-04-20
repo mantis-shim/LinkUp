@@ -22,7 +22,9 @@ describe('activities page load', () => {
             location: 'Vilnius',
             gender_id: 1,
             starts_at: '2026-04-10 08:00:00',
-            created_at: '2026-04-01 12:00:00'
+            created_at: '2026-04-01 12:00:00',
+            first_name: 'Jonas',
+            last_name: 'Jonaitis'
         };
 
         mockQuery
@@ -51,13 +53,13 @@ describe('activities page load', () => {
 
         expect(mockQuery).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('SELECT * FROM activities WHERE 1=1 AND category_id = ? AND location = ? AND gender_id = ? AND DATE(starts_at) >= ? AND DATE(starts_at) <= ? ORDER BY created_at DESC LIMIT 1 OFFSET ?'),
+            expect.stringContaining('SELECT a.*, u.first_name, u.last_name'),
             ['2', 'Vilnius', '1', '2026-04-01', '2026-04-30', 2]
         );
 
         expect(mockQuery).toHaveBeenNthCalledWith(
             2,
-            expect.stringContaining('SELECT COUNT(*) as count FROM activities WHERE 1=1 AND category_id = ? AND location = ? AND gender_id = ? AND DATE(starts_at) >= ? AND DATE(starts_at) <= ?'),
+            expect.stringContaining('SELECT COUNT(*) as count FROM activities a JOIN users u ON u.id = a.creator_id'),
             ['2', 'Vilnius', '1', '2026-04-01', '2026-04-30']
         );
     });
