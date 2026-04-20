@@ -12,7 +12,7 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
 		const formData = await request.formData();
 
 		const name = String(formData.get('name') ?? '').trim();
@@ -71,7 +71,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const creator_id = 1;
+			const creator_id = locals.user!.id;
 
 			const [result] = await pool.query(
 				`INSERT INTO activities

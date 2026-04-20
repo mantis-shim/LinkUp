@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         const userId = locals.user.id;
 
         const [rows] = await pool.query(
-            'SELECT id, username FROM users WHERE id = ?',
+            'SELECT id, username, name, lastname, email, city FROM users WHERE id = ?',
             [userId]
         );
 
@@ -19,27 +19,42 @@ export const load: PageServerLoad = async ({ locals }) => {
         const user = users[0] || null;
 
         if (!user) {
-            return { dbStatus: 'Error', user: null, createdActivities: [], participatedActivities: [] };
+            return { dbStatus: 'Error', user: null, createdActivities: [], upcomingActivities: [], pastActivities: [] };
         }
 
+        const activitySelect = `
+            SELECT a.*, c.name AS category_name
+            FROM activities a
+            LEFT JOIN categories c ON c.id = a.category_id
+        `;
+
         const [createdRows] = await pool.query(
-            'SELECT * FROM activities WHERE creator_id = ? ORDER BY starts_at DESC, created_at DESC',
+            `${activitySelect} WHERE a.creator_id = ? ORDER BY a.starts_at DESC, a.created_at DESC`,
             [userId]
         );
 
-        const [participatedRows] = await pool.query(
-            `SELECT a.* FROM activities a
-             JOIN activity_participants ap ON a.id = ap.activity_id
-             WHERE ap.user_id = ? AND a.creator_id != ?
+        const [upcomingRows] = await pool.query(
+            `${activitySelect}
+             JOIN activity_participants ap ON ap.activity_id = a.id
+             WHERE ap.user_id = ? AND a.starts_at >= NOW()
              ORDER BY a.starts_at ASC`,
-            [userId, userId]
+            [userId]
+        );
+
+        const [pastRows] = await pool.query(
+            `${activitySelect}
+             JOIN activity_participants ap ON ap.activity_id = a.id
+             WHERE ap.user_id = ? AND a.starts_at < NOW()
+             ORDER BY a.starts_at DESC`,
+            [userId]
         );
 
         return {
             dbStatus: 'Connected',
             user,
             createdActivities: createdRows as any[],
-            participatedActivities: participatedRows as any[]
+            upcomingActivities: upcomingRows as any[],
+            pastActivities: pastRows as any[],
         };
 
     } catch (error: any) {
@@ -51,7 +66,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             error: error.message,
             user: null,
             createdActivities: [],
-            participatedActivities: []
+            upcomingActivities: [],
+            pastActivities: [],
         };
     }
 };
