@@ -138,14 +138,14 @@
 <div class="page-wrapper">
 	{#if pendingRequests.length > 0}
 		<div class="request-panel">
-			<h2>Friendship requests</h2>
+			<h2>Draugystės užklausos</h2>
 			<ul>
 				{#each pendingRequests as request}
 					<li>
-						<span>{request.username} wants to be your friend.</span>
+						<span>{request.username} nori tapti tavo draugu.</span>
 						<div class="request-actions">
-							<button class="accept-btn" on:click={() => acceptFriendRequest(request.id)}>Accept</button>
-							<button class="delete-btn" on:click={() => deleteFriendRequest(request.id)}>Delete</button>
+							<button class="accept-btn" on:click={() => acceptFriendRequest(request.id)}>Priimti</button>
+							<button class="delete-btn" on:click={() => deleteFriendRequest(request.id)}>Atmesti</button>
 						</div>
 					</li>
 				{/each}
