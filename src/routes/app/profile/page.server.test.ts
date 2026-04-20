@@ -60,7 +60,7 @@ describe('Profile Page Load Function', () => {
             user: mockUser
         });
         expect(mockQuery).toHaveBeenCalledWith(
-            expect.stringContaining('SELECT id, username FROM users WHERE id = ?'),
+            expect.stringContaining('SELECT id, username, name, lastname, email, city FROM users WHERE id = ?'),
             [1]
         );
     });

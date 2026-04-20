@@ -53,8 +53,14 @@ describe('activities page load', () => {
 
         expect(mockQuery).toHaveBeenNthCalledWith(
             1,
-            expect.stringContaining('SELECT a.*, u.first_name, u.last_name'),
-            ['2', 'Vilnius', '1', '2026-04-01', '2026-04-30', 2]
+            expect.stringContaining(`
+                SELECT a.*,c.name as category_name, u.name as creator_name, u.lastname as creator_lastname
+              FROM activities a 
+              JOIN users u ON u.id = a.creator_id
+              JOIN categories c ON c.id = a.category_id
+              WHERE 1=1 AND category_id = ? AND location = ? AND gender_id = ? AND DATE(starts_at) >= ? AND DATE(starts_at) <= ? ORDER BY a.created_at DESC LIMIT 1 OFFSET ?
+             `),
+            ['2', 'Vilnius', '1', '2026-04-01', '2026-04-30','Jonas','Jonaitis', 2]
         );
 
         expect(mockQuery).toHaveBeenNthCalledWith(
