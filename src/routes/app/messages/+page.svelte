@@ -65,14 +65,14 @@
 			const result = await res.json();
 
 			if (result.success) {
-				setFeedback('Friend request sent!');
+				setFeedback('Draugo užklausa išsiųsta!');
 				users = users.filter((user) => user.id !== friendId);
 				showDropdown = false;
 			} else {
-				setFeedback(result.error || 'Failed to send request.');
+				setFeedback(result.error || 'Nepavyko išsiųsti užklausos.');
 			}
 		} catch (e) {
-			setFeedback('Network error.');
+			setFeedback('Tinklo klaida.');
 		}
 	}
 
@@ -89,14 +89,14 @@
 			const result = await res.json();
 
 			if (result.success) {
-				setFeedback('Friend request accepted!');
+				setFeedback('Draugo užklausa priimta!');
 				pendingRequests = pendingRequests.filter((user) => user.id !== friendId);
 				await invalidateAll();
 			} else {
-				setFeedback(result.error || 'Failed to accept request.');
+				setFeedback(result.error || 'Nepavyko priimti užklausos.');
 			}
 		} catch (e) {
-			setFeedback('Network error.');
+			setFeedback('Tinklo klaida.');
 		}
 	}
 
@@ -113,13 +113,13 @@
 			const result = await res.json();
 
 			if (result.success) {
-				setFeedback('Friend request deleted.');
+				setFeedback('Draugo užklausa atmesta.');
 				pendingRequests = pendingRequests.filter((user) => user.id !== friendId);
 			} else {
-				setFeedback(result.error || 'Failed to delete request.');
+				setFeedback(result.error || 'Nepavyko atmesti užklausos.');
 			}
 		} catch (e) {
-			setFeedback('Network error.');
+			setFeedback('Tinklo klaida.');
 		}
 	}
 
