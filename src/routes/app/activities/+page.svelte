@@ -1,12 +1,7 @@
 <script lang="ts">
-<<<<<<< HEAD
-	import { goto } from '$app/navigation';
-	import { fly } from 'svelte/transition';
-=======
 	import { goto, invalidateAll } from '$app/navigation';
 	import { slide } from 'svelte/transition';
 	import { untrack } from 'svelte';
->>>>>>> develop
 
 	let { data } = $props();
 
@@ -18,9 +13,6 @@
 	let locations = $derived(data.locations || []);
 	let filters = $derived(data.filters || {});
 
-<<<<<<< HEAD
-	let direction = $state(1);
-=======
 	// ── Filter state ───────────────────────────────────────────
 	let filtersOpen = $state(false);
 	let selectedCategory = $state(untrack(() => data.filters?.category || ''));
@@ -28,7 +20,6 @@
 	let selectedGender = $state(untrack(() => data.filters?.gender || ''));
 	let selectedStartDate = $state(untrack(() => data.filters?.startDate || ''));
 	let selectedEndDate = $state(untrack(() => data.filters?.endDate || ''));
->>>>>>> develop
 
 	let hasActiveFilters = $derived(
 		!!(selectedCategory || selectedLocation || selectedGender || selectedStartDate || selectedEndDate)
