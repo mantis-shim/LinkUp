@@ -40,6 +40,13 @@ CREATE TABLE activity_participants(
     PRIMARY KEY (activity_id, user_id)
 );
 
+CREATE TABLE activity_rejections(
+    activity_id INT NOT NULL REFERENCES activities(id),
+    user_id INT NOT NULL REFERENCES users(id),
+    rejected_at DATETIME DEFAULT NOW(),
+    PRIMARY KEY (activity_id, user_id)
+);
+
 CREATE TABLE converstaions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100), -- NULL FOR DIRECT MESSAGES
