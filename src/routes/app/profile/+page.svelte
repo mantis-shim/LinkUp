@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { getTomorrowAlert } from './tomorrow-alert';
+	import { goto } from '$app/navigation';
+import { getTomorrowAlert } from './tomorrow-alert';
 
 	let { data } = $props();
 
@@ -24,6 +25,9 @@
 			if (selectedCategory === 'upcoming') return startsAt >= now;
 			return false;
 		});
+	}
+	function editProfile() {
+		goto('/app/profile/edit')
 	}
 
 	function totalActivities() {
@@ -115,7 +119,7 @@
 			</section>
 
 			<footer>
-				<button class="action-btn" onclick={() => alert('Redagavimas netrukus!')}>Redaguoti profilį</button>
+				<button class="action-btn" onclick={editProfile}>Redaguoti profilį</button>
 			</footer>
 		</article>
 	{:else}

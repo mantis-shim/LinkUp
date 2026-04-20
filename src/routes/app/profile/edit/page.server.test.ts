@@ -28,17 +28,17 @@ describe('profile edit load', () => {
 
 	it('grąžina vartotoją ir slaptažodžio ilgį, kai DB pavyksta', async () => {
 		vi.mocked(pool.query).mockResolvedValueOnce([
-			[{ id: 5, username: 'Jonas', password_char_count: 6 }]
+			[{ id: 5, username: 'Jonas', name: 'Jonas', lastname: 'Jonaitis', email: 'jonas@test.lt', city: 'Vilnius', password_char_count: 6 }]
 		] as never);
 
 		const data = (await load({
 			locals: { user: { id: 5, username: 'Jonas' } }
 		} as Parameters<typeof load>[0])) as {
-			user: { id: number; username: string } | null;
+			user: { id: number; username: string; name: string; lastname: string; email: string; city: string } | null;
 			passwordCharCount: number;
 		};
 
-		expect(data.user).toEqual({ id: 5, username: 'Jonas' });
+		expect(data.user).toEqual({ id: 5, username: 'Jonas', name: 'Jonas', lastname: 'Jonaitis', email: 'jonas@test.lt', city: 'Vilnius' });
 		expect(data.passwordCharCount).toBe(6);
 		expect(pool.query).toHaveBeenCalledOnce();
 	});
@@ -79,11 +79,12 @@ describe('profile edit updateProfile', () => {
 	it('atnaujina vardą ir nukreipia į profilį, kai vardas laisvas', async () => {
 		vi.mocked(pool.query)
 			.mockResolvedValueOnce([[]] as never)
+			.mockResolvedValueOnce([[]] as never)
 			.mockResolvedValueOnce([[], []] as never);
 
 		try {
 			await actions.updateProfile({
-				request: formRequest({ username: 'Naujas' }),
+				request: formRequest({ username: 'Naujas', email: 'naujas@test.lt' }),
 				locals: { user: { id: 1, username: 'Senas' } }
 			} as Parameters<typeof actions.updateProfile>[0]);
 			expect.fail('turėjo mesti redirect');
@@ -91,14 +92,14 @@ describe('profile edit updateProfile', () => {
 			expect(e).toMatchObject({ status: 303, location: '/app/profile' });
 		}
 
-		expect(pool.query).toHaveBeenCalledTimes(2);
+		expect(pool.query).toHaveBeenCalledTimes(3);
 	});
 
 	it('grąžina užimto vardo klaidą, kai DB randa kitą naudotoją', async () => {
 		vi.mocked(pool.query).mockResolvedValueOnce([[{ id: 99 }]] as never);
 
 		const result = await actions.updateProfile({
-			request: formRequest({ username: 'Užimtas' }),
+			request: formRequest({ username: 'Užimtas', email: 'uzimtas@test.lt' }),
 			locals: { user: { id: 1, username: 'a' } }
 		} as Parameters<typeof actions.updateProfile>[0]);
 
