@@ -4,7 +4,6 @@ CREATE TABLE users (
     lastname VARCHAR(255),
     email VARCHAR(255) NOT NULL UNIQUE,
     city VARCHAR(255),
-    gender_id INT REFERENCES genders(id),
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT NOW()

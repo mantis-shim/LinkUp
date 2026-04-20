@@ -40,9 +40,7 @@ describe('Profile Page Load Function', () => {
         const mockUser = { 
             id: 1, 
             username: 'testuser', 
-            password: 'testuser',
-            name: 'Test',
-            lastname: 'User',
+            password: 'testuser'
         };
         
         mockQuery.mockResolvedValueOnce([[mockUser], []]);

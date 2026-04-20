@@ -3,15 +3,6 @@ import { pool } from '$lib/database/connection';
 import type { Actions, PageServerLoad } from './$types';
 import type { Activity } from '$lib/types';
 
-function isValidImageSource(value: string) {
-	return (
-		!value ||
-		value.startsWith('http://') ||
-		value.startsWith('https://') ||
-		value.startsWith('data:image/')
-	);
-}
-
 export const load: PageServerLoad = async ({ params }) => {
 	const id = Number(params.id);
 
@@ -63,21 +54,15 @@ export const actions: Actions = {
 			errors.name = 'Veiklos pavadinimas negali viršyti 30 simbolių.';
 		}
 
-		if (!location) {
-			errors.location = 'Vieta yra privaloma.';
-		}
-
 		if (!category_id_raw || Number.isNaN(category_id)) {
-			errors.category_id = 'Kategorija yra privaloma.';
+			errors.category_id = 'Kategorijos ID yra privalomas.';
 		}
 
 		if (gender_id_raw && Number.isNaN(gender_id as number)) {
-			errors.gender_id = 'Lytis turi būti korektiška.';
+			errors.gender_id = 'Lyties ID turi būti skaičius.';
 		}
 
-		if (!starts_at) {
-			errors.starts_at = 'Data yra privaloma.';
-		} else {
+		if (starts_at) {
 			const selectedDate = new Date(starts_at);
 			const now = new Date();
 
@@ -86,10 +71,6 @@ export const actions: Actions = {
 			} else if (selectedDate < now) {
 				errors.starts_at = 'Veiklos data negali būti ankstesnė nei dabartinis laikas.';
 			}
-		}
-
-		if (!isValidImageSource(image_src)) {
-			errors.image_src = 'Netinkamas nuotraukos formatas.';
 		}
 
 		if (Object.keys(errors).length > 0) {
@@ -115,10 +96,10 @@ export const actions: Actions = {
 				[
 					name,
 					description || null,
-					location,
+					location || null,
 					image_src || null,
 					category_id,
-					starts_at,
+					starts_at || null,
 					gender_id,
 					id
 				]
