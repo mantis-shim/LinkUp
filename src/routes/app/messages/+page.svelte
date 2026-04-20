@@ -173,7 +173,7 @@
 	{/if}
 
 	<button class="add-button" aria-label="Pridėti draugą" on:click={() => (showDropdown = !showDropdown)}>
-		+
+		<span>+</span>
 	</button>
 
 	{#if showDropdown}
@@ -329,10 +329,12 @@
 		right: 2rem;
 		width: 3rem;
 		height: 3rem;
+		padding: 0;
 		border-radius: 50%;
 		background: var(--color-primary);
 		color: white;
 		font-size: 2rem;
+		line-height: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -340,6 +342,11 @@
 		border: none;
 		cursor: pointer;
 		z-index: 10;
+	}
+
+	.add-button span {
+		display: block;
+		transform: translateY(-4px);
 	}
 
 	.add-button:hover {
