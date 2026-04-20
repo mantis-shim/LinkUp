@@ -2,90 +2,92 @@ import { fail, redirect } from '@sveltejs/kit';
 import { pool } from '$lib/database/connection';
 import type { Actions, PageServerLoad } from './$types';
 import type { Activity } from '$lib/types';
+import type { RowDataPacket } from 'mysql2';
 
-export const load: PageServerLoad = async ({ url }) => {
-	try {
-		const limit = 1;
-		const offset = Number(url.searchParams.get('offset')) || 0;
+export const load: PageServerLoad = async ({ url, locals }) => {
+    try {
+        const limit = 1;
+        const category = url.searchParams.get('category');
+        const location = url.searchParams.get('location');
+        const gender = url.searchParams.get('gender');
+        const startDate = url.searchParams.get('startDate');
+        const endDate = url.searchParams.get('endDate');
 
-		const [rows] = await pool.query(
-			'SELECT * FROM activities ORDER BY created_at DESC LIMIT 1 OFFSET ?',
-			[offset]
-		);
+        let filterQuery = 'WHERE 1=1';
+        const params: any[] = [];
 
-		const [countRows] = await pool.query('SELECT COUNT(*) as count FROM activities');
-		const totalCount = (countRows as any)[0].count;
+        if (category)   { filterQuery += ' AND category_id = ?'; params.push(category); }
+        if (location)   { filterQuery += ' AND location = ?';     params.push(location); }
+        if (gender)     { filterQuery += ' AND gender_id = ?';    params.push(gender); }
+        if (startDate)  { filterQuery += ' AND DATE(starts_at) >= ?'; params.push(startDate); }
+        if (endDate)    { filterQuery += ' AND DATE(starts_at) <= ?'; params.push(endDate); }
 
-		const activities = rows as Activity[];
+        const userId = locals.user?.id ?? null;
+        if (userId) {
+            filterQuery += ` AND a.id NOT IN (
+                SELECT activity_id FROM activity_participants WHERE user_id = ?
+                UNION
+                SELECT activity_id FROM activity_rejections WHERE user_id = ?
+            )`;
+            params.push(userId, userId);
+        }
 
-		return {
-			dbStatus: 'Connected',
-			activity: activities[0] || null,
-			offset,
-			hasMore: offset + 1 < totalCount
-		};
-	} catch (error: any) {
-		return {
-			dbStatus: 'Error',
-			error: error.message,
-			activity: null,
-			offset: 0
-		};
-	}
-};
+        // For logged-in users the DB exclusion always returns the next unacted activity at offset 0.
+        // For guests, honour the URL offset so browsing still works.
+        const offset = userId ? 0 : (Number(url.searchParams.get('offset')) || 0);
 
-// veiklos redagavimo veiksmas
-export const actions: Actions = {
-	default: async ({ request }) => {
-		const formData = await request.formData();
+        // ✅ Provide the generic so TypeScript knows the result is a row array, not OkPacket
+        const [rows] = await pool.query<RowDataPacket[]>(
+            `SELECT a.*,c.name as category_name, u.name as creator_name, u.lastname as creator_lastname
+             FROM activities a 
+             JOIN users u ON u.id = a.creator_id
+             JOIN categories c ON c.id = a.category_id
+             ${filterQuery} ORDER BY a.created_at DESC LIMIT 1 OFFSET ?`,
+            [...params, offset]
+        );
 
-		console.log('EDIT ACTION HIT');
-		console.log({
-		id: formData.get('id'),
-		name: formData.get('name'),
-		location: formData.get('location'),
-		starts_at: formData.get('starts_at'),
-		category_id: formData.get('category_id')
-	});
+        const [countRows] = await pool.query<RowDataPacket[]>(
+            `SELECT COUNT(*) as count FROM activities a ${filterQuery}`,
+            params
+        );
+        const totalCount = countRows[0].count;
 
-		const id = Number(formData.get('id'));
-		const name = String(formData.get('name') ?? '').trim();
-		const description = String(formData.get('description') ?? '').trim();
-		const location = String(formData.get('location') ?? '').trim();
-		const starts_at = String(formData.get('starts_at') ?? '').trim();
-		const category_id_raw = String(formData.get('category_id') ?? '').trim();
-		const image_src = String(formData.get('image_src') ?? '').trim();
+        const [categories] = await pool.query<RowDataPacket[]>('SELECT id, name FROM categories ORDER BY name');
+        const [genders]    = await pool.query<RowDataPacket[]>('SELECT id, name FROM genders ORDER BY name');
+        const [locations]  = await pool.query<RowDataPacket[]>(
+            'SELECT DISTINCT location FROM activities WHERE location IS NOT NULL ORDER BY location'
+        );
 
-		const errors: Record<string, string> = {};
+        const activities = rows as Activity[];
 
-		if (!name) errors.name = 'Pavadinimas yra privalomas.';
-		if (!location) errors.location = 'Vieta yra privaloma.';
-		if (!starts_at) {
-			errors.starts_at = 'Data yra privaloma.';
-		} else {
-			const selectedDate = new Date(starts_at);
-			if (Number.isNaN(selectedDate.getTime())) {
-				errors.starts_at = 'Neteisinga datos reikšmė.';
-			}
-		}
-		if (!category_id_raw) errors.category_id = 'Kategorija yra privaloma.';
-
-		if (Object.keys(errors).length > 0) {
-			return fail(400, { errors });
-		}
-
-		try {
-			await pool.query(
-				`UPDATE activities 
-				 SET name=?, description=?, location=?, starts_at=?, category_id=?, image_src=? 
-				 WHERE id=?`,
-				[name, description || null, location, starts_at, category_id_raw, image_src || null, id]
-			);
-
-			throw redirect(303, `/app/activities?edited=${id}`);
-		} catch (error: any) {
-			if (error?.status === 303) throw error;
-			return fail(500, { dbError: 'Nepavyko atnaujinti veiklos.' });
-		}
-	}
+        return {
+            dbStatus: 'Connected',
+            activity: activities[0] || null,
+            offset,
+            hasMore: offset + 1 < totalCount,
+            totalCount,
+            categories,
+            genders,
+            locations,
+            filters: {
+                category:  category  || '',
+                location:  location  || '',
+                gender:    gender    || '',
+                startDate: startDate || '',
+                endDate:   endDate   || ''
+            }
+        };
+    } catch (error: any) {
+        console.error('Database fetch failed:', error);
+        return {
+            dbStatus: 'Error',
+            error: error.message,
+            activity: null,
+            offset: 0,
+            categories: [],
+            genders: [],
+            locations: [],
+            filters: { category: '', location: '', gender: '', startDate: '', endDate: '' }
+        };
+    }
 };

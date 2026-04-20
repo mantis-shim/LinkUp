@@ -1,12 +1,52 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { getTomorrowAlert } from './tomorrow-alert';
+	interface User {
+		id: number;
+		username: string;
+		name: string | null;
+		lastname: string | null;
+		email: string | null;
+		city: string | null;
+	}
 	let { data } = $props();
-	
-	let user = $derived(data.user);
-	let activities = $derived(data.activities || []);
+
+	const user = $derived(() => (data as { user: User }).user || null);
+	const createdActivities = $derived(() => (data as any).createdActivities || []);
+	const participatedActivities = $derived(() => (data as any).participatedActivities || []);
+	let selectedCategory = $state<'created' | 'past' | 'upcoming'>('created');
+	let tomorrowAlert = $state<string | null>(null);
+	let selectedActivity = $state<any | null>(null);
+
+	$effect(() => {
+		tomorrowAlert = getTomorrowAlert(createdActivities());
+	});
+
+	function getFilteredActivities() {
+		if (selectedCategory === 'created') return createdActivities();
+		const now = new Date();
+		return participatedActivities().filter((activity: any) => {
+			if (!activity.starts_at) return false;
+			const startsAt = new Date(activity.starts_at);
+			if (selectedCategory === 'past') return startsAt < now;
+			if (selectedCategory === 'upcoming') return startsAt >= now;
+			return false;
+		});
+	}
+	function editProfile() {
+		goto('/app/profile/edit')
+	}
+
+	function totalActivities() {
+		return createdActivities().length + participatedActivities().length;
+	}
 </script>
 
 <div class="card-wrapper profile-view">
-	{#if user}
+	{#if tomorrowAlert}
+		<div class="tomorrow-alert">{tomorrowAlert}</div>
+	{/if}
+	{#if user()}
 		<article class="profile-card">
 			<!-- Profile Header (Avatar/Name) -->
 			<header class="profile-header">
@@ -16,45 +56,78 @@
 					</svg>
 				</div>
 				<div class="user-meta">
-					<h1>{user.username ?? "Anonymous"}</h1>
-					<mark>UID: #{user.id ?? "???"}</mark>
+					<h1>{user().username ?? "Anonymous"}</h1>
+					{#if user().name || user().lastname}
+						<p class="full-name"> {user().name ?? 'Vardenis'} {user().lastname ?? 'Pavardenis'}</p>
+					{/if}
+					<p class="gender">Lytis: {user().gender ?? 'Nenurodyta'}</p>
+					<p class="contact-info">El-Paštas: {user().email ?? 'Nenurodyta'} </p>
+					<p class="contact-info">Miestas: {user().city ?? 'Vilnius'}</p>
 				</div>
 			</header>
 
 			<!-- Profile Stats (Mimics Activity info-list layout) -->
 			<section class="profile-content">
-				<div class="info-list">
+				<!-- <div class="info-list">
 					<div class="info-item">
-						<span class="label">Total Activities</span>
-						<span class="value">{activities?.length ?? 0}</span>
-					</div>
-					<div class="info-item">
-						<span class="label">Member Since</span>
-						<span class="value">{user.created_at ? new Date(user.created_at).toLocaleDateString() : "Not Set"}</span>
-					</div>
-				</div>
+						<span class="label">Iš viso veiklų</span>
+						<span class="value">{activities()?.length ?? 0}</span> -->
+					<!-- </div>  -->
+					<!-- <div class="info-item">
+						<span class="label">Paskyra sukurta</span>
+						<span class="value">{user().created_at ? new Date(user().created_at).toLocaleDateString() : "Nenurodyta"}</span>
+					</div> -->
+				<!-- </div> -->
 
 				<!-- Shared Styling: Activity List -->
 				<div class="user-activities">
-					<h2>My Activities</h2>
-					{#if activities && activities.length > 0}
-						<div class="activity-scroll">
-							{#each activities as activity}
-								<div class="activity-preview">
-									<strong>{activity.name ?? "Untitled Activity"}</strong>
-									<small>{activity.created_at ? new Date(activity.created_at).toLocaleDateString() : "Not Set"}</small>
-									<span>{activity.location ?? "No location"}</span>
-								</div>
-							{/each}
-						</div>
-					{:else}
-						<p class="empty-msg">You haven't created any activities yet.</p>
+				<h2>Mano veiklos ({getFilteredActivities().length})</h2>
+
+				<div class="category-tabs" role="tablist" aria-label="Veiklos kategorijų filtras">
+					<button
+						class:selected={selectedCategory === 'created'}
+						onclick={() => (selectedCategory = 'created')}
+						role="tab"
+						aria-selected={selectedCategory === 'created'}
+					>
+						Sukurtos
+					</button>
+					<button
+						class:selected={selectedCategory === 'upcoming'}
+						onclick={() => (selectedCategory = 'upcoming')}
+						role="tab"
+						aria-selected={selectedCategory === 'upcoming'}
+					>
+						Ateinančios
+					</button>
+					<button
+						class:selected={selectedCategory === 'past'}
+						onclick={() => (selectedCategory = 'past')}
+						role="tab"
+						aria-selected={selectedCategory === 'past'}
+					>
+						Praėjusios
+					</button>
+				</div>
+
+				{#if getFilteredActivities().length > 0}
+					<div class="activity-scroll">
+						{#each getFilteredActivities() as activity}
+							<button class="activity-preview" onclick={() => (selectedActivity = activity)}>
+								<strong>{activity.name ?? "Be pavadinimo"}</strong>
+								<small>{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : "Nustatyta"}</small>
+								<span>{activity.location ?? "Vieta nenustatyta"}</span>
+							</button>
+						{/each}
+					</div>
+				{:else}
+					<p class="empty-msg">Šioje kategorijoje veiklų nėra.</p>
 					{/if}
 				</div>
 			</section>
 
 			<footer>
-				<button class="action-btn" onclick={() => alert('Editing coming soon!')}>Edit Profile</button>
+				<button class="action-btn" onclick={editProfile}>Redaguoti profilį</button>
 			</footer>
 		</article>
 	{:else}
@@ -83,12 +156,34 @@
 			</section>
 
 			<div class="status-overlay">
-				<h2>User Not Found</h2>
-				<p>The profile you are looking for doesn't exist.</p>
-				<a href="/app/profile" class="action-btn-link">Reload</a>
+				<h2>Vartotojas nerastas</h2>
+				<p>Ieškomas profilis neegzistuoja.</p>
+				<a href="/app/profile" class="action-btn-link">Įkelti iš naujo</a>
 			</div>
 		</article>
 	{/if}
+{#if selectedActivity}
+	<div class="detail-backdrop" onclick={() => (selectedActivity = null)} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && (selectedActivity = null)} aria-label="Uždaryti">
+		<div class="detail-modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
+			<button class="detail-close" onclick={() => (selectedActivity = null)} aria-label="Uždaryti">✕</button>
+			<h2>{selectedActivity.name ?? 'Be pavadinimo'}</h2>
+			<dl class="detail-list">
+				{#if selectedActivity.description}
+					<dt>Aprašymas</dt>
+					<dd>{selectedActivity.description}</dd>
+				{/if}
+				<dt>Vieta</dt>
+				<dd>{selectedActivity.location ?? 'Nenustatyta'}</dd>
+				<dt>Data</dt>
+				<dd>{selectedActivity.starts_at ? new Date(selectedActivity.starts_at).toLocaleString() : 'Nenustatyta'}</dd>
+				{#if selectedActivity.gender_id}
+					<dt>Lytis</dt>
+					<dd>{selectedActivity.gender_id}</dd>
+				{/if}
+			</dl>
+		</div>
+	</div>
+{/if}
 </div>
 
 <style>
@@ -210,7 +305,13 @@
 	.user-meta h1 {
 		font-size: var(--text-2xl);
 		margin-bottom: var(--space-1);
+		
 	}
+	.user-meta p {
+		margin: 0px;
+		
+	}
+
 
 	.profile-content {
 		flex: 1;
@@ -224,24 +325,32 @@
 		color: var(--color-text);
 	}
 
+	.category-tabs {
+		display: flex;
+		gap: var(--space-2);
+		margin-bottom: var(--space-4);
+	}
+
+	.category-tabs button {
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		color: var(--color-text);
+		border-radius: var(--radius-lg);
+		padding: var(--space-2) var(--space-4);
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.category-tabs button.selected,
+	.category-tabs button:hover {
+		background: var(--color-primary);
+		color: white;
+	}
+
 	.activity-scroll {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
-	}
-
-	.activity-preview {
-		background: var(--color-bg-secondary);
-		border-radius: var(--radius-lg);
-		padding: var(--space-4);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-		border: 1px solid var(--color-border);
-	}
-
-	.activity-preview strong {
-		color: var(--color-primary);
 	}
 
 	.action-btn {
@@ -284,5 +393,108 @@
 	.value {
 		color: var(--color-text);
 		font-weight: 600;
+	}
+	.activity-preview {
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-lg);
+		padding: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		border: 1px solid var(--color-border);
+		text-align: left;
+		width: 100%;
+		cursor: pointer;
+		color: var(--color-text);
+		transition: border-color var(--transition-fast);
+	}
+
+	.activity-preview:hover {
+		border-color: var(--color-primary);
+	}
+
+	.activity-preview strong {
+		color: var(--color-primary);
+		font-size: var(--text-sm);
+	}
+
+	.activity-preview small {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+	}
+
+	.activity-preview span {
+		color: var(--color-text-subtle);
+		font-size: var(--text-xs);
+	}
+
+	.detail-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		padding: var(--space-4);
+	}
+
+	.detail-modal {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		padding: var(--space-8);
+		max-width: var(--max-w-sm);
+		width: 100%;
+		position: relative;
+	}
+
+	.detail-modal h2 {
+		margin-bottom: var(--space-6);
+		font-size: var(--text-xl);
+		color: var(--color-primary);
+	}
+
+	.detail-close {
+		position: absolute;
+		top: var(--space-4);
+		right: var(--space-4);
+		background: none;
+		border: none;
+		font-size: var(--text-lg);
+		cursor: pointer;
+		color: var(--color-text-subtle);
+		line-height: 1;
+	}
+
+	.detail-list {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-2) var(--space-4);
+	}
+
+	.detail-list dt {
+		color: var(--color-text-subtle);
+		font-size: var(--text-sm);
+		font-weight: 500;
+		padding-top: 2px;
+	}
+
+	.detail-list dd {
+		color: var(--color-text);
+		margin: 0;
+	}
+
+	/* Tomorrow Alert Styling */
+	.tomorrow-alert {
+		background: var(--color-warning, #fff3cd);
+		color: var(--color-warning-text, #856404);
+		border: 1px solid var(--color-warning-border, #ffeeba);
+		border-radius: var(--radius-lg);
+		padding: var(--space-4);
+		margin-bottom: var(--space-6);
+		font-weight: 600;
+		text-align: center;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 	}
 </style>

@@ -104,13 +104,11 @@ export const actions: Actions = {
 			const insertedId = (result as any).insertId;
 
 			throw redirect(303, `/app/activities?created=${insertedId}`);
-				} catch (error: any) {
+		} catch (error: any) {
 			if (error?.status === 303) throw error;
 
-			console.error('CREATE ERROR:', error);
-
 			return fail(500, {
-				dbError: `Nepavyko sukurti veiklos. ${error?.message ?? ''}`,
+				dbError: 'Nepavyko sukurti veiklos.',
 				values: {
 					name,
 					description,

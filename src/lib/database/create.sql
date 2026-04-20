@@ -1,5 +1,10 @@
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    lastname VARCHAR(255),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    city VARCHAR(255),
+    gender_id INT REFERENCES genders(id),
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT NOW()
@@ -37,6 +42,13 @@ CREATE TABLE activity_participants(
     activity_id INT NOT NULL REFERENCES activities(id),
     user_id INT NOT NULL REFERENCES users(id),
     joined_at DATETIME DEFAULT NOW(),
+    PRIMARY KEY (activity_id, user_id)
+);
+
+CREATE TABLE activity_rejections(
+    activity_id INT NOT NULL REFERENCES activities(id),
+    user_id INT NOT NULL REFERENCES users(id),
+    rejected_at DATETIME DEFAULT NOW(),
     PRIMARY KEY (activity_id, user_id)
 );
 
