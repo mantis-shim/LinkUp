@@ -14,9 +14,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
         console.log(`Fetching profile for id ${userId} category=${category}`);
 
-        // AC1 fields: id, username, first_name, last_name, email, city
+        // AC1 fields: id, username, name, lastname, email, city
         const [rows] = await pool.query(
-            'SELECT id, username FROM users WHERE id = ?',
+            'SELECT id, username, name, lastname, email, city FROM users WHERE id = ?',
             [userId]
         );
 

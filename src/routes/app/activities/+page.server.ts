@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
         const userId = locals.user?.id ?? null;
         if (userId) {
-            filterQuery += ` AND id NOT IN (
+            filterQuery += ` AND a.id NOT IN (
                 SELECT activity_id FROM activity_participants WHERE user_id = ?
                 UNION
                 SELECT activity_id FROM activity_rejections WHERE user_id = ?
@@ -37,12 +37,16 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
         // ✅ Provide the generic so TypeScript knows the result is a row array, not OkPacket
         const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT * FROM activities ${filterQuery} ORDER BY created_at DESC LIMIT 1 OFFSET ?`,
+            `SELECT a.*,c.name as category_name, u.name as creator_name, u.lastname as creator_lastname
+             FROM activities a 
+             JOIN users u ON u.id = a.creator_id
+             JOIN categories c ON c.id = a.category_id
+             ${filterQuery} ORDER BY a.created_at DESC LIMIT 1 OFFSET ?`,
             [...params, offset]
         );
 
         const [countRows] = await pool.query<RowDataPacket[]>(
-            `SELECT COUNT(*) as count FROM activities ${filterQuery}`,
+            `SELECT COUNT(*) as count FROM activities a ${filterQuery}`,
             params
         );
         const totalCount = countRows[0].count;

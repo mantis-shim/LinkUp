@@ -1,9 +1,16 @@
 <script lang="ts">
 	import { getTomorrowAlert } from './tomorrow-alert';
-
+	interface User {
+		id: number;
+		username: string;
+		name: string | null;
+		lastname: string | null;
+		email: string | null;
+		city: string | null;
+	}
 	let { data } = $props();
 
-	const user = $derived(() => (data as any).user || null);
+	const user = $derived(() => (data as { user: User }).user || null);
 	const activities = $derived(() => (data as any).activities || []);
 	let selectedCategory = $state<'created' | 'past' | 'upcoming'>('created');
 	let tomorrowAlert = $state<string | null>(null);
@@ -40,26 +47,27 @@
 				</div>
 				<div class="user-meta">
 					<h1>{user().username ?? "Anonymous"}</h1>
-					<mark>UID: #{user().id ?? "???"}</mark>
-					{#if user().first_name || user().last_name}
-						<p class="full-name">{user().first_name ?? ''} {user().last_name ?? ''}</p>
+					{#if user().name || user().lastname}
+						<p class="full-name"> {user().name ?? 'Vardenis'} {user().lastname ?? 'Pavardenis'}</p>
 					{/if}
-					<p class="contact-info">{user().email ?? 'Nenurodyta'} · {user().city ?? 'Miestas nenurodytas'}</p>
+					<p class="gender">Lytis: {user().gender ?? 'Nenurodyta'}</p>
+					<p class="contact-info">El-Paštas: {user().email ?? 'Nenurodyta'} </p>
+					<p class="contact-info">Miestas: {user().city ?? 'Vilnius'}</p>
 				</div>
 			</header>
 
 			<!-- Profile Stats (Mimics Activity info-list layout) -->
 			<section class="profile-content">
-				<div class="info-list">
+				<!-- <div class="info-list">
 					<div class="info-item">
 						<span class="label">Iš viso veiklų</span>
-						<span class="value">{activities()?.length ?? 0}</span>
-					</div>
-					<div class="info-item">
+						<span class="value">{activities()?.length ?? 0}</span> -->
+					<!-- </div>  -->
+					<!-- <div class="info-item">
 						<span class="label">Paskyra sukurta</span>
 						<span class="value">{user().created_at ? new Date(user().created_at).toLocaleDateString() : "Nenurodyta"}</span>
-					</div>
-				</div>
+					</div> -->
+				<!-- </div> -->
 
 				<!-- Shared Styling: Activity List -->
 				<div class="user-activities">
@@ -265,7 +273,13 @@
 	.user-meta h1 {
 		font-size: var(--text-2xl);
 		margin-bottom: var(--space-1);
+		
 	}
+	.user-meta p {
+		margin: 0px;
+		
+	}
+
 
 	.profile-content {
 		flex: 1;
