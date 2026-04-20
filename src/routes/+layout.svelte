@@ -1,11 +1,177 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
-
+	import '../app.css';
+	import { page } from '$app/state';
 	let { children } = $props();
+
+	// Function to check if a path is active
+	// Use path.slice(1) to handle the leading slash
+	function isActive(path: string) {
+		if (path === '/') {
+			return page.url.pathname === '/';
+		}
+		return page.url.pathname.startsWith(path);
+	}
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-{@render children()}
+
+<header>
+	<nav class="navbar">
+		<div class="nav-container">
+			<div class="nav-brand">
+				<span class="logo-accent">◆</span>
+				<span class="logo-text">LinkUp</span>
+			</div>
+			<div class="nav-links">
+                <a href="/app/activities" class="nav-link" class:active={isActive('/app/activities')}>Veiklos</a>
+                <a href="/app/create" class="nav-link" class:active={isActive('/app/create')}>Kurti</a>
+				<a href="/app/messages" class="nav-link" class:active={isActive('/app/messages')}>Žinutės <span class="notification-dot"></span></a>
+                <a href="/app/profile" class="user-menu" class:active={isActive('/app/profile')}>
+                    <img src="/images/account.svg" alt="Paskyra" class="user-avatar">
+                    <span class="user-name">Paskyra</span>
+                </a>
+                <a href="/logout" class="nav-link">Atsijungti</a>
+			</div>
+		</div>
+	</nav>
+</header>
+<main class="main-content">
+	{@render children()}
+</main>
+
+
+<style>
+.navbar {
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-bo);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+.logo-accent {
+    color: var(--color-primary);
+    font-size: 1.5rem;
+    animation: rotate 10s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    color: var(--color-secondary);
+    letter-spacing: -0.02em;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.nav-link {
+    color: var(--color-text-light);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition);
+    position: relative;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--color-primary);
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1.5rem;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--color-primary);
+    border-radius: 3px 3px 0 0;
+}
+
+.notification-dot {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    width: 8px;
+    height: 8px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: var(--color-bg);
+    border-radius: 50px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.user-menu:hover {
+    background: var(--color-border);
+}
+
+.user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--color-secondary);
+}
+
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .nav-links {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+}
+</style>
