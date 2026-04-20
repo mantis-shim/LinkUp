@@ -2,6 +2,15 @@ import { fail, redirect } from '@sveltejs/kit';
 import { pool } from '$lib/database/connection';
 import type { Actions, PageServerLoad } from './$types';
 
+function isValidImageSource(value: string) {
+	return (
+		!value ||
+		value.startsWith('http://') ||
+		value.startsWith('https://') ||
+		value.startsWith('data:image/')
+	);
+}
+
 export const load: PageServerLoad = async () => {
 	return {};
 };
@@ -29,15 +38,21 @@ export const actions: Actions = {
 			errors.name = 'Veiklos pavadinimas negali viršyti 30 simbolių.';
 		}
 
+		if (!location) {
+			errors.location = 'Vieta yra privaloma.';
+		}
+
 		if (!category_id_raw || Number.isNaN(category_id)) {
-			errors.category_id = 'Kategorijos ID yra privalomas.';
+			errors.category_id = 'Kategorija yra privaloma.';
 		}
 
 		if (gender_id_raw && Number.isNaN(gender_id as number)) {
-			errors.gender_id = 'Lyties ID turi būti skaičius.';
+			errors.gender_id = 'Lytis turi būti korektiška.';
 		}
 
-		if (starts_at) {
+		if (!starts_at) {
+			errors.starts_at = 'Data yra privaloma.';
+		} else {
 			const selectedDate = new Date(starts_at);
 			const now = new Date();
 
@@ -46,6 +61,10 @@ export const actions: Actions = {
 			} else if (selectedDate < now) {
 				errors.starts_at = 'Veiklos data negali būti ankstesnė nei dabartinis laikas.';
 			}
+		}
+
+		if (!isValidImageSource(image_src)) {
+			errors.image_src = 'Netinkamas nuotraukos formatas.';
 		}
 
 		if (Object.keys(errors).length > 0) {
@@ -73,11 +92,11 @@ export const actions: Actions = {
 				[
 					name,
 					description || null,
-					location || null,
+					location,
 					image_src || null,
 					creator_id,
 					category_id,
-					starts_at || null,
+					starts_at,
 					gender_id
 				]
 			);
@@ -85,11 +104,13 @@ export const actions: Actions = {
 			const insertedId = (result as any).insertId;
 
 			throw redirect(303, `/app/activities?created=${insertedId}`);
-		} catch (error: any) {
+				} catch (error: any) {
 			if (error?.status === 303) throw error;
 
+			console.error('CREATE ERROR:', error);
+
 			return fail(500, {
-				dbError: 'Nepavyko sukurti veiklos.',
+				dbError: `Nepavyko sukurti veiklos. ${error?.message ?? ''}`,
 				values: {
 					name,
 					description,
