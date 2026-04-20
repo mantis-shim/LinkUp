@@ -4,24 +4,30 @@
 	let { data } = $props();
 
 	const user = $derived(() => (data as any).user || null);
-	const activities = $derived(() => (data as any).activities || []);
+	const createdActivities = $derived(() => (data as any).createdActivities || []);
+	const participatedActivities = $derived(() => (data as any).participatedActivities || []);
 	let selectedCategory = $state<'created' | 'past' | 'upcoming'>('created');
 	let tomorrowAlert = $state<string | null>(null);
+	let selectedActivity = $state<any | null>(null);
 
 	$effect(() => {
-		tomorrowAlert = getTomorrowAlert(activities());
+		tomorrowAlert = getTomorrowAlert(createdActivities());
 	});
 
 	function getFilteredActivities() {
+		if (selectedCategory === 'created') return createdActivities();
 		const now = new Date();
-		return (activities() || []).filter((activity: any) => {
-			if (selectedCategory === 'created') return true;
+		return participatedActivities().filter((activity: any) => {
 			if (!activity.starts_at) return false;
 			const startsAt = new Date(activity.starts_at);
 			if (selectedCategory === 'past') return startsAt < now;
 			if (selectedCategory === 'upcoming') return startsAt >= now;
-			return true;
+			return false;
 		});
+	}
+
+	function totalActivities() {
+		return createdActivities().length + participatedActivities().length;
 	}
 </script>
 
@@ -53,7 +59,7 @@
 				<div class="info-list">
 					<div class="info-item">
 						<span class="label">Iš viso veiklų</span>
-						<span class="value">{activities()?.length ?? 0}</span>
+						<span class="value">{totalActivities()}</span>
 					</div>
 					<div class="info-item">
 						<span class="label">Paskyra sukurta</span>
@@ -95,11 +101,11 @@
 				{#if getFilteredActivities().length > 0}
 					<div class="activity-scroll">
 						{#each getFilteredActivities() as activity}
-							<div class="activity-preview">
+							<button class="activity-preview" onclick={() => (selectedActivity = activity)}>
 								<strong>{activity.name ?? "Be pavadinimo"}</strong>
 								<small>{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : "Nustatyta"}</small>
 								<span>{activity.location ?? "Vieta nenustatyta"}</span>
-							</div>
+							</button>
 						{/each}
 					</div>
 				{:else}
@@ -144,6 +150,28 @@
 			</div>
 		</article>
 	{/if}
+{#if selectedActivity}
+	<div class="detail-backdrop" onclick={() => (selectedActivity = null)} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && (selectedActivity = null)} aria-label="Uždaryti">
+		<div class="detail-modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
+			<button class="detail-close" onclick={() => (selectedActivity = null)} aria-label="Uždaryti">✕</button>
+			<h2>{selectedActivity.name ?? 'Be pavadinimo'}</h2>
+			<dl class="detail-list">
+				{#if selectedActivity.description}
+					<dt>Aprašymas</dt>
+					<dd>{selectedActivity.description}</dd>
+				{/if}
+				<dt>Vieta</dt>
+				<dd>{selectedActivity.location ?? 'Nenustatyta'}</dd>
+				<dt>Data</dt>
+				<dd>{selectedActivity.starts_at ? new Date(selectedActivity.starts_at).toLocaleString() : 'Nenustatyta'}</dd>
+				{#if selectedActivity.gender_id}
+					<dt>Lytis</dt>
+					<dd>{selectedActivity.gender_id}</dd>
+				{/if}
+			</dl>
+		</div>
+	</div>
+{/if}
 </div>
 
 <style>
@@ -307,20 +335,6 @@
 		gap: var(--space-3);
 	}
 
-	.activity-preview {
-		background: var(--color-bg-secondary);
-		border-radius: var(--radius-lg);
-		padding: var(--space-4);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-		border: 1px solid var(--color-border);
-	}
-
-	.activity-preview strong {
-		color: var(--color-primary);
-	}
-
 	.action-btn {
 		width: 100%;
 		padding: var(--space-4);
@@ -362,6 +376,97 @@
 		color: var(--color-text);
 		font-weight: 600;
 	}
+	.activity-preview {
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-lg);
+		padding: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		border: 1px solid var(--color-border);
+		text-align: left;
+		width: 100%;
+		cursor: pointer;
+		color: var(--color-text);
+		transition: border-color var(--transition-fast);
+	}
+
+	.activity-preview:hover {
+		border-color: var(--color-primary);
+	}
+
+	.activity-preview strong {
+		color: var(--color-primary);
+		font-size: var(--text-sm);
+	}
+
+	.activity-preview small {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+	}
+
+	.activity-preview span {
+		color: var(--color-text-subtle);
+		font-size: var(--text-xs);
+	}
+
+	.detail-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		padding: var(--space-4);
+	}
+
+	.detail-modal {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		padding: var(--space-8);
+		max-width: var(--max-w-sm);
+		width: 100%;
+		position: relative;
+	}
+
+	.detail-modal h2 {
+		margin-bottom: var(--space-6);
+		font-size: var(--text-xl);
+		color: var(--color-primary);
+	}
+
+	.detail-close {
+		position: absolute;
+		top: var(--space-4);
+		right: var(--space-4);
+		background: none;
+		border: none;
+		font-size: var(--text-lg);
+		cursor: pointer;
+		color: var(--color-text-subtle);
+		line-height: 1;
+	}
+
+	.detail-list {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-2) var(--space-4);
+	}
+
+	.detail-list dt {
+		color: var(--color-text-subtle);
+		font-size: var(--text-sm);
+		font-weight: 500;
+		padding-top: 2px;
+	}
+
+	.detail-list dd {
+		color: var(--color-text);
+		margin: 0;
+	}
+
 	/* Tomorrow Alert Styling */
 	.tomorrow-alert {
 		background: var(--color-warning, #fff3cd);
