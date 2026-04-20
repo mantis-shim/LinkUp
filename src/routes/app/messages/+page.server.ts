@@ -19,7 +19,31 @@ export const load: PageServerLoad = async ({ locals }) => {
 		 [userId]
 	);
 
+	const [rows] = await pool.query(
+		`SELECT id, username
+		 FROM users
+		 WHERE id != ?
+		   AND id NOT IN (
+		     SELECT friend_id FROM friendships WHERE user_id = ?
+		     UNION
+		     SELECT user_id FROM friendships WHERE friend_id = ?
+		   )`,
+		[userId, userId, userId]
+	);
+
+	const [pendingRows] = await pool.query(
+		`SELECT f.user_id AS id, u.username
+		 FROM friendships f
+		 JOIN users u ON u.id = f.user_id
+		 WHERE f.friend_id = ?
+		   AND f.status = 'pending'
+		 ORDER BY f.created_at DESC`,
+		[userId]
+	);
+
 	return {
 		conversations: conversations as any[],
+		users: rows as { id: number; username: string }[],
+		pendingRequests: pendingRows as { id: number; username: string }[],
 	};
 };
