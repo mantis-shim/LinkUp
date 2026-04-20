@@ -1,14 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { pool } from '$lib/database/connection';
 import type { Actions, PageServerLoad } from './$types';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import { randomBytes } from 'crypto';
 
 export const load: PageServerLoad = async () => {
-	const [categories] = await pool.query<{ id: number; name: string }[]>('SELECT id, name FROM categories ORDER BY name');
-	const [genders] = await pool.query<{ id: number; name: string }[]>('SELECT id, name FROM genders ORDER BY id');
-	return { categories, genders };
+	return {};
 };
 
 export const actions: Actions = {
@@ -21,7 +16,7 @@ export const actions: Actions = {
 		const starts_at = String(formData.get('starts_at') ?? '').trim();
 		const category_id_raw = String(formData.get('category_id') ?? '').trim();
 		const gender_id_raw = String(formData.get('gender_id') ?? '').trim();
-		const imageFile = formData.get('image') as File | null;
+		const image_src = String(formData.get('image_src') ?? '').trim();
 
 		const category_id = Number(category_id_raw);
 		const gender_id = gender_id_raw ? Number(gender_id_raw) : null;
@@ -35,11 +30,11 @@ export const actions: Actions = {
 		}
 
 		if (!category_id_raw || Number.isNaN(category_id)) {
-			errors.category_id = 'Kategorija yra privaloma.';
+			errors.category_id = 'Kategorijos ID yra privalomas.';
 		}
 
 		if (gender_id_raw && Number.isNaN(gender_id as number)) {
-			errors.gender_id = 'Neteisinga lyties reikšmė.';
+			errors.gender_id = 'Lyties ID turi būti skaičius.';
 		}
 
 		if (starts_at) {
@@ -56,18 +51,16 @@ export const actions: Actions = {
 		if (Object.keys(errors).length > 0) {
 			return fail(400, {
 				errors,
-				values: { name, description, location, starts_at, category_id: category_id_raw, gender_id: gender_id_raw }
+				values: {
+					name,
+					description,
+					location,
+					starts_at,
+					category_id: category_id_raw,
+					gender_id: gender_id_raw,
+					image_src
+				}
 			});
-		}
-
-		let image_src: string | null = null;
-
-		if (imageFile && imageFile.size > 0) {
-			const ext = path.extname(imageFile.name) || '.jpg';
-			const filename = `${randomBytes(8).toString('hex')}${ext}`;
-			const buffer = Buffer.from(await imageFile.arrayBuffer());
-			await writeFile(path.join(process.cwd(), 'static', 'images', filename), buffer);
-			image_src = `/images/${filename}`;
 		}
 
 		try {
@@ -81,7 +74,7 @@ export const actions: Actions = {
 					name,
 					description || null,
 					location || null,
-					image_src,
+					image_src || null,
 					creator_id,
 					category_id,
 					starts_at || null,
@@ -97,7 +90,15 @@ export const actions: Actions = {
 
 			return fail(500, {
 				dbError: 'Nepavyko sukurti veiklos.',
-				values: { name, description, location, starts_at, category_id: category_id_raw, gender_id: gender_id_raw }
+				values: {
+					name,
+					description,
+					location,
+					starts_at,
+					category_id: category_id_raw,
+					gender_id: gender_id_raw,
+					image_src
+				}
 			});
 		}
 	}

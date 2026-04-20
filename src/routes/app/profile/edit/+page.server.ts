@@ -8,30 +8,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const userId = locals.user?.id ?? 1;
 
 		const [rows] = await pool.query(
-			'SELECT id, name, lastname, email, city, username, CHAR_LENGTH(password) AS password_char_count FROM users WHERE id = ?',
+			'SELECT id, username, CHAR_LENGTH(password) AS password_char_count FROM users WHERE id = ?',
 			[userId]
 		);
 
-		const users = rows as {
-			id: number;
-			name: string | null;
-			lastname: string | null;
-			email: string;
-			city: string | null;
-			username: string;
-			password_char_count: number;
-		}[];
+		const users = rows as { id: number; username: string; password_char_count: number }[];
 		const raw = users[0] || null;
-		const user = raw
-			? {
-					id: raw.id,
-					name: raw.name ?? '',
-					lastname: raw.lastname ?? '',
-					email: String(raw.email),
-					city: raw.city ?? '',
-					username: String(raw.username)
-				}
-			: null;
+		const user = raw ? { id: raw.id, username: String(raw.username) } : null;
 		const passwordCharCount = raw ? Number(raw.password_char_count) : 0;
 		return { user, passwordCharCount };
 	} catch {
@@ -44,27 +27,29 @@ export const actions: Actions = {
 	updateProfile: async ({ request, locals }) => {
 		const userId = locals.user?.id ?? 1;
 		const formData = await request.formData();
-
-		const username = (formData.get('username') as string ?? '').trim();
-		const name = (formData.get('name') as string ?? '').trim();
-		const lastname = (formData.get('lastname') as string ?? '').trim();
-		const email = (formData.get('email') as string ?? '').trim();
-		const city = (formData.get('city') as string ?? '').trim();
-		const newPassword = (formData.get('newPassword') as string ?? '');
-		const confirmNew = (formData.get('confirmNewPassword') as string ?? '');
-		const currentForChange = (formData.get('currentPasswordForChange') as string ?? '');
+		const usernameRaw = formData.get('username');
+		const username = typeof usernameRaw === 'string' ? usernameRaw.trim() : '';
+		const newPasswordRaw = formData.get('newPassword');
+		const confirmNewRaw = formData.get('confirmNewPassword');
+		const currentForChangeRaw = formData.get('currentPasswordForChange');
+		const newPassword = typeof newPasswordRaw === 'string' ? newPasswordRaw : '';
+		const confirmNew = typeof confirmNewRaw === 'string' ? confirmNewRaw : '';
+		const currentForChange = typeof currentForChangeRaw === 'string' ? currentForChangeRaw : '';
 		const wantsPasswordChange = newPassword.length > 0;
 
 		if (!username) {
-			return fail(400, { usernameError: 'Vartotojo vardas privalomas.', username: '' });
-		}
-		if (!email) {
-			return fail(400, { emailError: 'El. paštas privalomas.', username });
+			return fail(400, {
+				usernameError: 'Vartotojo vardas privalomas.',
+				username: ''
+			});
 		}
 
 		if (wantsPasswordChange) {
 			if (!currentForChange) {
-				return fail(400, { passwordError: 'Trūksta dabartinio slaptažodžio.', username });
+				return fail(400, {
+					passwordError: 'Trūksta dabartinio slaptažodžio.',
+					username
+				});
 			}
 			if (newPassword !== confirmNew) {
 				return fail(400, {
@@ -75,37 +60,36 @@ export const actions: Actions = {
 			const [pwRows] = await pool.query('SELECT password FROM users WHERE id = ?', [userId]);
 			const pwRow = (pwRows as { password: string }[])[0];
 			if (!pwRow || pwRow.password !== currentForChange) {
-				return fail(400, { passwordError: 'Neteisingas dabartinis slaptažodis.', username });
+				return fail(400, {
+					passwordError: 'Neteisingas dabartinis slaptažodis.',
+					username
+				});
 			}
 		}
 
 		try {
-			const [takenUsername] = await pool.query(
+			const [taken] = await pool.query(
 				'SELECT id FROM users WHERE username = ? AND id != ?',
 				[username, userId]
 			);
-			if ((takenUsername as { id: number }[]).length > 0) {
-				return fail(400, { usernameError: 'Šis vartotojo vardas jau užimtas.', username });
+			const rows = taken as { id: number }[];
+			if (rows.length > 0) {
+				return fail(400, {
+					usernameError: 'Šis vartotojo vardas jau užimtas.',
+					username
+				});
 			}
 
-			const [takenEmail] = await pool.query(
-				'SELECT id FROM users WHERE email = ? AND id != ?',
-				[email, userId]
-			);
-			if ((takenEmail as { id: number }[]).length > 0) {
-				return fail(400, { emailError: 'Šis el. paštas jau naudojamas.', username });
-			}
-
-			await pool.query(
-				'UPDATE users SET username = ?, name = ?, lastname = ?, email = ?, city = ? WHERE id = ?',
-				[username, name || null, lastname || null, email, city || null, userId]
-			);
+			await pool.query('UPDATE users SET username = ? WHERE id = ?', [username, userId]);
 			if (wantsPasswordChange) {
 				await pool.query('UPDATE users SET password = ? WHERE id = ?', [newPassword, userId]);
 			}
 		} catch {
 			console.error('Profilio atnaujinimas nepavyko.');
-			return fail(500, { usernameError: 'Nepavyko išsaugoti. Bandykite dar kartą.', username });
+			return fail(500, {
+				usernameError: 'Nepavyko išsaugoti. Bandykite dar kartą.',
+				username
+			});
 		}
 
 		throw redirect(303, '/app/profile');

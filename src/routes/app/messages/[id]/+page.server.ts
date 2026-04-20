@@ -22,18 +22,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		throw redirect(302, '/app/messages');
 	}
 
-	const [conversationRows] = await pool.query(
-		`SELECT c.id, c.is_group,
-		        COALESCE(c.name, (
-		            SELECT u.username
-		            FROM conversation_members cm2
-		            JOIN users u ON u.id = cm2.user_id
-		            WHERE cm2.conversation_id = c.id AND cm2.user_id != ?
-		            LIMIT 1
-		        )) AS name
-		 FROM conversations c WHERE c.id = ?`,
-		[locals.user.id, conversationId]
-	);
+	const [conversationRows] = await pool.query('SELECT * FROM conversations WHERE id = ?', [conversationId]);
 	const conversation = (conversationRows as any[])[0];
 
 	const [messages] = await pool.query(

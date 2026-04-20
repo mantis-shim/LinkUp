@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { data, form } = $props();
+	let { form } = $props();
 </script>
 
 <svelte:head>
@@ -11,7 +11,7 @@
 		<h1>Kurti veiklą</h1>
 		<p class="subtitle">Įvesk naujos veiklos informaciją.</p>
 
-		<form method="POST" enctype="multipart/form-data" class="activity-form">
+		<form method="POST" class="activity-form">
 			<div class="field">
 				<label for="name">Pavadinimas</label>
 				<input id="name" name="name" type="text" maxlength="30" value={form?.values?.name ?? ''} />
@@ -40,26 +40,16 @@
 
 			<div class="grid-two">
 				<div class="field">
-					<label for="category_id">Kategorija</label>
-					<select id="category_id" name="category_id">
-						<option value="">-- Pasirink kategoriją --</option>
-						{#each data.categories as cat}
-							<option value={cat.id} selected={String(form?.values?.category_id) === String(cat.id)}>{cat.name}</option>
-						{/each}
-					</select>
+					<label for="category_id">Kategorijos ID</label>
+					<input id="category_id" name="category_id" type="number" min="1" value={form?.values?.category_id ?? ''} />
 					{#if form?.errors?.category_id}
 						<small class="error">{form.errors.category_id}</small>
 					{/if}
 				</div>
 
 				<div class="field">
-					<label for="gender_id">Lytis</label>
-					<select id="gender_id" name="gender_id">
-						<option value="">-- Visos lytys --</option>
-						{#each data.genders as g}
-							<option value={g.id} selected={String(form?.values?.gender_id) === String(g.id)}>{g.name}</option>
-						{/each}
-					</select>
+					<label for="gender_id">Lyties ID</label>
+					<input id="gender_id" name="gender_id" type="number" min="1" value={form?.values?.gender_id ?? ''} />
 					{#if form?.errors?.gender_id}
 						<small class="error">{form.errors.gender_id}</small>
 					{/if}
@@ -67,8 +57,8 @@
 			</div>
 
 			<div class="field">
-				<label for="image">Nuotrauka</label>
-				<input id="image" name="image" type="file" accept="image/*" />
+				<label for="image_src">Nuotraukos nuoroda</label>
+				<input id="image_src" name="image_src" type="text" value={form?.values?.image_src ?? ''} />
 			</div>
 
 			{#if form?.dbError}
@@ -91,10 +81,8 @@
 	.activity-form { display:flex; flex-direction:column; gap:var(--space-5); }
 	.field { display:flex; flex-direction:column; gap:var(--space-2); }
 	label { font-weight:600; color:var(--color-text); }
-	input, textarea, select { width:100%; padding:0.85rem 1rem; border:1px solid var(--color-border); border-radius:var(--radius-lg); background:white; font:inherit; box-sizing:border-box; }
-	input[type="file"] { padding:0.5rem; }
+	input, textarea { width:100%; padding:0.85rem 1rem; border:1px solid var(--color-border); border-radius:var(--radius-lg); background:white; font:inherit; box-sizing:border-box; }
 	textarea { resize:vertical; min-height:110px; }
-	select { appearance:auto; }
 	.grid-two { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4); }
 	.actions { display:flex; justify-content:flex-end; gap:var(--space-3); margin-top:var(--space-4); }
 	.primary-btn, .secondary-btn { padding:0.85rem 1.2rem; border-radius:var(--radius-lg); border:none; font-weight:600; text-decoration:none; cursor:pointer; }

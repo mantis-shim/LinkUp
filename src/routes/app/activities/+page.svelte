@@ -265,8 +265,8 @@
 			<div class="card-body">
 				<div class="card-title-row">
 					<h2>{activity.name}</h2>
-					{#if activity.category_id}
-						<mark>#{activity.category_id}</mark>
+					{#if activity.category_name}
+						<mark>#{activity.category_name}</mark>
 					{/if}
 				</div>
 
@@ -304,10 +304,7 @@
 				</div>
 
 				<footer class="card-footer">
-					<small>Sukūrė: #{activity.creator_id}</small>
-					{#if data.totalCount}
-						<small class="card-counter">{offset + 1} / {data.totalCount}</small>
-					{/if}
+					<small>Sukūrė: {activity.creator_name} {activity.creator_lastname}</small>
 				</footer>
 			</div>
 		</div>

@@ -40,12 +40,13 @@ describe('Profile Page Load Function', () => {
         const mockUser = { 
             id: 1, 
             username: 'testuser', 
-            password: 'testuser'
+            password: 'testuser',
+            name: 'Test',
+            lastname: 'User',
         };
         
-        mockQuery.mockResolvedValueOnce([[mockUser], []]);
-        mockQuery.mockResolvedValueOnce([[], []]);
-        mockQuery.mockResolvedValueOnce([[], []]);
+        mockQuery.mockResolvedValueOnce([[mockUser], []]); 
+        mockQuery.mockResolvedValueOnce([[], []]); 
 
         const event = {
             locals: { user: { id: 1 } },

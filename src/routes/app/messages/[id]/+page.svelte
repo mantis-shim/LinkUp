@@ -15,7 +15,7 @@
 <div class="chat-page">
 	<header class="chat-header">
 		<button class="back-button" on:click={goBack}>← Atgal</button>
-		<h1>{conversation?.name ?? `Pokalbis #${$page.params.id}`}</h1>
+		<h1>Pokalbis su #{$page.params.id}</h1>
 	</header>
 
 	<section class="chat-body">

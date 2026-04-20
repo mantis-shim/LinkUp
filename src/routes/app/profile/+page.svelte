@@ -1,37 +1,34 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-import { getTomorrowAlert } from './tomorrow-alert';
-
+	import { getTomorrowAlert } from './tomorrow-alert';
+	interface User {
+		id: number;
+		username: string;
+		name: string | null;
+		lastname: string | null;
+		email: string | null;
+		city: string | null;
+	}
 	let { data } = $props();
 
-	const user = $derived(() => (data as any).user || null);
-	const createdActivities = $derived(() => (data as any).createdActivities || []);
-	const participatedActivities = $derived(() => (data as any).participatedActivities || []);
+	const user = $derived(() => (data as { user: User }).user || null);
+	const activities = $derived(() => (data as any).activities || []);
 	let selectedCategory = $state<'created' | 'past' | 'upcoming'>('created');
 	let tomorrowAlert = $state<string | null>(null);
-	let selectedActivity = $state<any | null>(null);
 
 	$effect(() => {
-		tomorrowAlert = getTomorrowAlert(createdActivities());
+		tomorrowAlert = getTomorrowAlert(activities());
 	});
 
 	function getFilteredActivities() {
-		if (selectedCategory === 'created') return createdActivities();
 		const now = new Date();
-		return participatedActivities().filter((activity: any) => {
+		return (activities() || []).filter((activity: any) => {
+			if (selectedCategory === 'created') return true;
 			if (!activity.starts_at) return false;
 			const startsAt = new Date(activity.starts_at);
 			if (selectedCategory === 'past') return startsAt < now;
 			if (selectedCategory === 'upcoming') return startsAt >= now;
-			return false;
+			return true;
 		});
-	}
-	function editProfile() {
-		goto('/app/profile/edit')
-	}
-
-	function totalActivities() {
-		return createdActivities().length + participatedActivities().length;
 	}
 </script>
 
@@ -50,26 +47,27 @@ import { getTomorrowAlert } from './tomorrow-alert';
 				</div>
 				<div class="user-meta">
 					<h1>{user().username ?? "Anonymous"}</h1>
-					<mark>UID: #{user().id ?? "???"}</mark>
-					{#if user().first_name || user().last_name}
-						<p class="full-name">{user().first_name ?? ''} {user().last_name ?? ''}</p>
+					{#if user().name || user().lastname}
+						<p class="full-name"> {user().name ?? 'Vardenis'} {user().lastname ?? 'Pavardenis'}</p>
 					{/if}
-					<p class="contact-info">{user().email ?? 'Nenurodyta'} · {user().city ?? 'Miestas nenurodytas'}</p>
+					<p class="gender">Lytis: {user().gender ?? 'Nenurodyta'}</p>
+					<p class="contact-info">El-Paštas: {user().email ?? 'Nenurodyta'} </p>
+					<p class="contact-info">Miestas: {user().city ?? 'Vilnius'}</p>
 				</div>
 			</header>
 
 			<!-- Profile Stats (Mimics Activity info-list layout) -->
 			<section class="profile-content">
-				<div class="info-list">
+				<!-- <div class="info-list">
 					<div class="info-item">
 						<span class="label">Iš viso veiklų</span>
-						<span class="value">{totalActivities()}</span>
-					</div>
-					<div class="info-item">
+						<span class="value">{activities()?.length ?? 0}</span> -->
+					<!-- </div>  -->
+					<!-- <div class="info-item">
 						<span class="label">Paskyra sukurta</span>
 						<span class="value">{user().created_at ? new Date(user().created_at).toLocaleDateString() : "Nenurodyta"}</span>
-					</div>
-				</div>
+					</div> -->
+				<!-- </div> -->
 
 				<!-- Shared Styling: Activity List -->
 				<div class="user-activities">
@@ -105,11 +103,11 @@ import { getTomorrowAlert } from './tomorrow-alert';
 				{#if getFilteredActivities().length > 0}
 					<div class="activity-scroll">
 						{#each getFilteredActivities() as activity}
-							<button class="activity-preview" onclick={() => (selectedActivity = activity)}>
+							<div class="activity-preview">
 								<strong>{activity.name ?? "Be pavadinimo"}</strong>
 								<small>{activity.starts_at ? new Date(activity.starts_at).toLocaleDateString() : "Nustatyta"}</small>
 								<span>{activity.location ?? "Vieta nenustatyta"}</span>
-							</button>
+							</div>
 						{/each}
 					</div>
 				{:else}
@@ -119,7 +117,7 @@ import { getTomorrowAlert } from './tomorrow-alert';
 			</section>
 
 			<footer>
-				<button class="action-btn" onclick={editProfile}>Redaguoti profilį</button>
+				<button class="action-btn" onclick={() => alert('Redagavimas netrukus!')}>Redaguoti profilį</button>
 			</footer>
 		</article>
 	{:else}
@@ -154,28 +152,6 @@ import { getTomorrowAlert } from './tomorrow-alert';
 			</div>
 		</article>
 	{/if}
-{#if selectedActivity}
-	<div class="detail-backdrop" onclick={() => (selectedActivity = null)} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && (selectedActivity = null)} aria-label="Uždaryti">
-		<div class="detail-modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
-			<button class="detail-close" onclick={() => (selectedActivity = null)} aria-label="Uždaryti">✕</button>
-			<h2>{selectedActivity.name ?? 'Be pavadinimo'}</h2>
-			<dl class="detail-list">
-				{#if selectedActivity.description}
-					<dt>Aprašymas</dt>
-					<dd>{selectedActivity.description}</dd>
-				{/if}
-				<dt>Vieta</dt>
-				<dd>{selectedActivity.location ?? 'Nenustatyta'}</dd>
-				<dt>Data</dt>
-				<dd>{selectedActivity.starts_at ? new Date(selectedActivity.starts_at).toLocaleString() : 'Nenustatyta'}</dd>
-				{#if selectedActivity.gender_id}
-					<dt>Lytis</dt>
-					<dd>{selectedActivity.gender_id}</dd>
-				{/if}
-			</dl>
-		</div>
-	</div>
-{/if}
 </div>
 
 <style>
@@ -297,7 +273,13 @@ import { getTomorrowAlert } from './tomorrow-alert';
 	.user-meta h1 {
 		font-size: var(--text-2xl);
 		margin-bottom: var(--space-1);
+		
 	}
+	.user-meta p {
+		margin: 0px;
+		
+	}
+
 
 	.profile-content {
 		flex: 1;
@@ -337,6 +319,20 @@ import { getTomorrowAlert } from './tomorrow-alert';
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
+	}
+
+	.activity-preview {
+		background: var(--color-bg-secondary);
+		border-radius: var(--radius-lg);
+		padding: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		border: 1px solid var(--color-border);
+	}
+
+	.activity-preview strong {
+		color: var(--color-primary);
 	}
 
 	.action-btn {
@@ -380,97 +376,6 @@ import { getTomorrowAlert } from './tomorrow-alert';
 		color: var(--color-text);
 		font-weight: 600;
 	}
-	.activity-preview {
-		background: var(--color-bg-secondary);
-		border-radius: var(--radius-lg);
-		padding: var(--space-4);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-		border: 1px solid var(--color-border);
-		text-align: left;
-		width: 100%;
-		cursor: pointer;
-		color: var(--color-text);
-		transition: border-color var(--transition-fast);
-	}
-
-	.activity-preview:hover {
-		border-color: var(--color-primary);
-	}
-
-	.activity-preview strong {
-		color: var(--color-primary);
-		font-size: var(--text-sm);
-	}
-
-	.activity-preview small {
-		color: var(--color-text-muted);
-		font-size: var(--text-xs);
-	}
-
-	.activity-preview span {
-		color: var(--color-text-subtle);
-		font-size: var(--text-xs);
-	}
-
-	.detail-backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 100;
-		padding: var(--space-4);
-	}
-
-	.detail-modal {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-xl);
-		padding: var(--space-8);
-		max-width: var(--max-w-sm);
-		width: 100%;
-		position: relative;
-	}
-
-	.detail-modal h2 {
-		margin-bottom: var(--space-6);
-		font-size: var(--text-xl);
-		color: var(--color-primary);
-	}
-
-	.detail-close {
-		position: absolute;
-		top: var(--space-4);
-		right: var(--space-4);
-		background: none;
-		border: none;
-		font-size: var(--text-lg);
-		cursor: pointer;
-		color: var(--color-text-subtle);
-		line-height: 1;
-	}
-
-	.detail-list {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-2) var(--space-4);
-	}
-
-	.detail-list dt {
-		color: var(--color-text-subtle);
-		font-size: var(--text-sm);
-		font-weight: 500;
-		padding-top: 2px;
-	}
-
-	.detail-list dd {
-		color: var(--color-text);
-		margin: 0;
-	}
-
 	/* Tomorrow Alert Styling */
 	.tomorrow-alert {
 		background: var(--color-warning, #fff3cd);
