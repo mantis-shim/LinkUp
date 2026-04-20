@@ -455,11 +455,6 @@
 {/if}
 
 <style>
-<<<<<<< HEAD
-	@keyframes pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.5; }
-=======
 	/* ── Filter Bar ──────────────────────────────────────────── */
 	.filter-bar {
 		display: flex;
@@ -472,7 +467,6 @@
 		top: 0;
 		z-index: var(--z-above);
 		backdrop-filter: blur(8px);
->>>>>>> develop
 	}
 
 	.filter-toggle {
@@ -860,147 +854,6 @@
 		color: white;
 		border: none;
 		border-radius: var(--radius-lg);
-<<<<<<< HEAD
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.animation-container {
-		position: relative;
-		width: 100%;
-		max-width: var(--max-w-sm);
-		height: 90dvh;
-		display: grid;
-		place-items: center;
-	}
-
-	.animation-container > :global(article) {
-		grid-area: 1 / 1;
-	}
-
-	.card-wrapper {
-		background: var(--color-bg);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		overflow: hidden;
-		position: relative;
-	}
-
-	article {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-xl);
-		padding: var(--space-8);
-		max-width: var(--max-w-sm);
-		width: 100%;
-		height: 90dvh;
-		display: flex;
-		flex-direction: column;
-		box-shadow: none;
-		box-sizing: border-box;
-		overflow: hidden;
-	}
-
-	.nav-arrow {
-		position: absolute;
-		top: 50%;
-		transform: translateY(-50%);
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		color: var(--color-text);
-		border-radius: var(--radius-full);
-		width: 44px;
-		height: 44px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: var(--shadow-md);
-		z-index: 10;
-		padding: 0;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	.nav-arrow:hover {
-		background: var(--color-bg-secondary);
-		transform: translateY(-50%) scale(1.1);
-	}
-
-	.nav-arrow.next {
-		right: var(--space-4);
-	}
-
-	.nav-arrow.prev {
-		left: var(--space-4);
-	}
-
-	figure {
-		flex: 1;
-		min-height: 0;
-		margin: 0 0 var(--space-8) 0;
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-
-	figure img,
-	figure div {
-		height: 100%;
-		width: 100%;
-		object-fit: cover;
-	}
-
-	header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: var(--space-6);
-	}
-
-	.title-group h1 {
-		font-size: var(--text-3xl);
-		line-height: var(--leading-tight);
-	}
-
-	section {
-		display: flex;
-		flex-direction: column;
-		flex-shrink: 0;
-	}
-
-	section > p {
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-6);
-		font-size: var(--text-sm);
-		max-width: 100%;
-	}
-
-	.info-list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
-		margin-bottom: var(--space-6);
-	}
-
-	.info-item {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding-bottom: var(--space-2);
-		border-bottom: 1px solid var(--color-bg-secondary);
-	}
-
-	.label {
-		font-size: var(--text-xs);
-		font-weight: var(--font-medium);
-		color: var(--color-text-subtle);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.value {
-=======
->>>>>>> develop
 		font-size: var(--text-sm);
 		font-weight: var(--font-semibold);
 		font-family: inherit;
@@ -1063,27 +916,4 @@
 		background: #dc2626;
 		color: #fff;
 	}
-<<<<<<< HEAD
-
-	.edit-wrapper {
-		margin-top: 12px;
-	}
-
-	.edit-btn {
-		display: inline-block;
-		padding: 0.65rem 1rem;
-		background: #f3f3f3;
-		color: #222;
-		text-decoration: none;
-		border-radius: 10px;
-		font-weight: 600;
-		transition: 0.2s ease;
-	}
-
-	.edit-btn:hover {
-		background: #e2e2e2;
-	}
 </style>
-=======
-</style>
->>>>>>> develop
