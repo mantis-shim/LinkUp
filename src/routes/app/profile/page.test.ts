@@ -9,10 +9,7 @@ describe('ProfilePage Component', () => {
             user: {
                 id: 1,
                 username: 'testuser',
-                first_name: 'Vardenis',
-                last_name: 'Pavardenis',
-                email: 'vardenis@example.com',
-                city: 'Vilnius'
+                password: 'testuser',
             },
             activities: [],
             category: 'created'

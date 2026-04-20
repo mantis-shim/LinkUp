@@ -40,10 +40,7 @@ describe('Profile Page Load Function', () => {
         const mockUser = { 
             id: 1, 
             username: 'testuser', 
-            first_name: 'Vardenis', 
-            last_name: 'Pavardenis',
-            email: 'vardenis@example.com',
-            city: 'Vilnius'
+            password: 'testuser'
         };
         
         mockQuery.mockResolvedValueOnce([[mockUser], []]); 
@@ -61,7 +58,7 @@ describe('Profile Page Load Function', () => {
             user: mockUser
         });
         expect(mockQuery).toHaveBeenCalledWith(
-            expect.stringContaining('SELECT id, username, first_name, last_name, email, city'),
+            expect.stringContaining('SELECT id, username, password'),
             [1]
         );
     });

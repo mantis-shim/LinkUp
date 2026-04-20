@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { slide } from 'svelte/transition';
 	import { untrack } from 'svelte';
 
@@ -44,6 +44,16 @@
 		goto('?offset=0', { replaceState: true });
 	}
 
+	// ── Toast ──────────────────────────────────────────────────
+	let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
+	let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function showToast(message: string, type: 'success' | 'error' = 'success') {
+		if (toastTimer) clearTimeout(toastTimer);
+		toast = { message, type };
+		toastTimer = setTimeout(() => { toast = null; }, 2500);
+	}
+
 	// ── Swipe logic ────────────────────────────────────────────
 	let isDragging = $state(false);
 	let startX = $state(0);
@@ -85,24 +95,41 @@
 	}
 
 	async function swipeOut(direction: 'left' | 'right') {
+		if (!activity || isAnimatingOut) return;
+		const activityId = activity.id;
 		isAnimatingOut = true;
 		swipeX = direction === 'left' ? -800 : 800;
 		await new Promise<void>((r) => setTimeout(r, 380));
-		if (direction === 'left') acceptActivity();
-		else rejectActivity();
-		// Load next activity
-		const nextOffset = offset + 1;
-		await goto(`?offset=${nextOffset}${getFilterParams()}`, { replaceState: false, keepFocus: true, noScroll: true });
+
+		const action = direction === 'left' ? 'accept' : 'reject';
+		try {
+			const response = await fetch('/app/activities', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ activityId, action })
+			});
+			const result = await response.json();
+			if (response.ok && result.status) {
+				showToast(result.status === 'accepted' ? 'Priimta! ✓' : 'Atmesta ✕', result.status === 'accepted' ? 'success' : 'error');
+			} else {
+				showToast('Nepavyko. Bandykite dar kartą.', 'error');
+			}
+		} catch {
+			showToast('Nepavyko. Patikrinkite ryšį.', 'error');
+		}
+
+		// Reload data — DB exclusion now hides the acted-on activity
+		await invalidateAll();
 		swipeX = 0;
 		isAnimatingOut = false;
 	}
 
-	function acceptActivity() {
-		// placeholder – no action yet
+	async function acceptActivity() {
+		await swipeOut('left');
 	}
 
-	function rejectActivity() {
-		// placeholder – no action yet
+	async function rejectActivity() {
+		await swipeOut('right');
 	}
 </script>
 
@@ -306,6 +333,13 @@
 		</div>
 	{/if}
 </div>
+
+<!-- ── Toast ─────────────────────────────────────────────── -->
+{#if toast}
+	<div class="toast toast-{toast.type}" role="status" aria-live="polite">
+		{toast.message}
+	</div>
+{/if}
 
 <style>
 	/* ── Filter Bar ──────────────────────────────────────────── */
@@ -735,5 +769,38 @@
 	.btn-ghost:hover {
 		background: var(--color-bg-secondary);
 		color: var(--color-text);
+	}
+
+	/* ── Toast ───────────────────────────────────────────────── */
+	.toast {
+		position: fixed;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		padding: 0.6rem 1.4rem;
+		border-radius: var(--radius-full);
+		font-size: var(--text-sm);
+		font-weight: var(--font-semibold);
+		font-family: inherit;
+		z-index: 200;
+		pointer-events: none;
+		white-space: nowrap;
+		box-shadow: var(--shadow-lg);
+		animation: toast-in 0.2s ease;
+	}
+
+	@keyframes toast-in {
+		from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+		to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+	}
+
+	.toast-success {
+		background: #16a34a;
+		color: #fff;
+	}
+
+	.toast-error {
+		background: #dc2626;
+		color: #fff;
 	}
 </style>
