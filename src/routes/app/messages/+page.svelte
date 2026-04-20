@@ -19,9 +19,20 @@
 	let users = $state<User[]>((data as any).users || []);
 	let pendingRequests = $state<User[]>((data as any).pendingRequests || []);
 	let showDropdown = $state(false);
+	let searchQuery = $state('');
 	let feedback = $state('');
 	let dropdownRef: HTMLDivElement | null = null;
 	let feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	let filteredUsers = $derived.by(() => {
+		const term = searchQuery.trim().toLocaleLowerCase();
+
+		if (!term) {
+			return [] as User[];
+		}
+
+		return users.filter((user) => user.username.toLocaleLowerCase().includes(term));
+	});
 
 	$effect(() => {
 		conversations = (data as any).conversations || [];
@@ -50,6 +61,13 @@
 			feedback = '';
 			feedbackTimeout = null;
 		}, 2000);
+	}
+
+	function toggleDropdown() {
+		showDropdown = !showDropdown;
+		if (showDropdown) {
+			searchQuery = '';
+		}
 	}
 
 	async function addFriend(friendId: number) {
@@ -172,18 +190,27 @@
 		<p class="empty-message">Nėra pokalbių</p>
 	{/if}
 
-	<button class="add-button" aria-label="Pridėti draugą" on:click={() => (showDropdown = !showDropdown)}>
-		+
+	<button class="add-button" aria-label="Pridėti draugą" on:click={toggleDropdown}>
+		<span>+</span>
 	</button>
 
 	{#if showDropdown}
 		<div class="dropdown" bind:this={dropdownRef}>
 			<h2>Pasirinkite vartotoją</h2>
-			{#if users.length === 0}
-				<div class="empty">Nėra vartotojų</div>
+			<input
+				class="search-input"
+				type="text"
+				placeholder="Ieškoti pagal vardą"
+				bind:value={searchQuery}
+			/>
+
+			{#if searchQuery.trim().length === 0}
+				<div class="empty">Pirmiausia įveskite paiešką</div>
+			{:else if filteredUsers.length === 0}
+				<div class="empty">Vartotojų nerasta</div>
 			{:else}
 				<ul>
-					{#each users as user}
+					{#each filteredUsers as user}
 						<li on:click={() => addFriend(user.id)}>{user.username}</li>
 					{/each}
 				</ul>
@@ -329,10 +356,12 @@
 		right: 2rem;
 		width: 3rem;
 		height: 3rem;
+		padding: 0;
 		border-radius: 50%;
 		background: var(--color-primary);
 		color: white;
 		font-size: 2rem;
+		line-height: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -340,6 +369,11 @@
 		border: none;
 		cursor: pointer;
 		z-index: 10;
+	}
+
+	.add-button span {
+		display: block;
+		transform: translateY(-4px);
 	}
 
 	.add-button:hover {
@@ -362,6 +396,17 @@
 	.dropdown h2 {
 		margin: 0 0 0.5rem 0;
 		font-size: var(--text-base);
+	}
+
+	.search-input {
+		width: 100%;
+		padding: 0.55rem 0.65rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		margin-bottom: 0.6rem;
+		font: inherit;
+		background: var(--color-surface);
+		color: var(--color-text);
 	}
 
 	.dropdown ul {
