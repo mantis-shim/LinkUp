@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { onDestroy, onMount } from 'svelte';
 	let { data } = $props();
 
@@ -21,6 +21,13 @@
 	let showDropdown = $state(false);
 	let feedback = $state('');
 	let dropdownRef: HTMLDivElement | null = null;
+	let feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	$effect(() => {
+		conversations = (data as any).conversations || [];
+		users = (data as any).users || [];
+		pendingRequests = (data as any).pendingRequests || [];
+	});
 
 	function openConversation(conversation: Conversation) {
 		goto(`/app/messages/${conversation.id}`);
@@ -30,6 +37,19 @@
 		if (showDropdown && dropdownRef && !dropdownRef.contains(event.target as Node)) {
 			showDropdown = false;
 		}
+	}
+
+	function setFeedback(message: string) {
+		feedback = message;
+
+		if (feedbackTimeout) {
+			clearTimeout(feedbackTimeout);
+		}
+
+		feedbackTimeout = setTimeout(() => {
+			feedback = '';
+			feedbackTimeout = null;
+		}, 2000);
 	}
 
 	async function addFriend(friendId: number) {
@@ -45,14 +65,14 @@
 			const result = await res.json();
 
 			if (result.success) {
-				feedback = 'Friend request sent!';
+				setFeedback('Friend request sent!');
 				users = users.filter((user) => user.id !== friendId);
 				showDropdown = false;
 			} else {
-				feedback = result.error || 'Failed to send request.';
+				setFeedback(result.error || 'Failed to send request.');
 			}
 		} catch (e) {
-			feedback = 'Network error.';
+			setFeedback('Network error.');
 		}
 	}
 
@@ -69,13 +89,14 @@
 			const result = await res.json();
 
 			if (result.success) {
-				feedback = 'Friend request accepted!';
+				setFeedback('Friend request accepted!');
 				pendingRequests = pendingRequests.filter((user) => user.id !== friendId);
+				await invalidateAll();
 			} else {
-				feedback = result.error || 'Failed to accept request.';
+				setFeedback(result.error || 'Failed to accept request.');
 			}
 		} catch (e) {
-			feedback = 'Network error.';
+			setFeedback('Network error.');
 		}
 	}
 
@@ -92,13 +113,13 @@
 			const result = await res.json();
 
 			if (result.success) {
-				feedback = 'Friend request deleted.';
+				setFeedback('Friend request deleted.');
 				pendingRequests = pendingRequests.filter((user) => user.id !== friendId);
 			} else {
-				feedback = result.error || 'Failed to delete request.';
+				setFeedback(result.error || 'Failed to delete request.');
 			}
 		} catch (e) {
-			feedback = 'Network error.';
+			setFeedback('Network error.');
 		}
 	}
 
@@ -108,6 +129,9 @@
 
 	onDestroy(() => {
 		document.removeEventListener('mousedown', handleClick);
+		if (feedbackTimeout) {
+			clearTimeout(feedbackTimeout);
+		}
 	});
 </script>
 
