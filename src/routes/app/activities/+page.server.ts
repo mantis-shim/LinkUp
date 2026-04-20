@@ -3,10 +3,9 @@ import type { PageServerLoad } from './$types';
 import type { Activity } from '$lib/types';
 import type { RowDataPacket } from 'mysql2';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
     try {
         const limit = 1;
-        const offset = Number(url.searchParams.get('offset')) || 0;
         const category = url.searchParams.get('category');
         const location = url.searchParams.get('location');
         const gender = url.searchParams.get('gender');
@@ -21,6 +20,20 @@ export const load: PageServerLoad = async ({ url }) => {
         if (gender)     { filterQuery += ' AND gender_id = ?';    params.push(gender); }
         if (startDate)  { filterQuery += ' AND DATE(starts_at) >= ?'; params.push(startDate); }
         if (endDate)    { filterQuery += ' AND DATE(starts_at) <= ?'; params.push(endDate); }
+
+        const userId = locals.user?.id ?? null;
+        if (userId) {
+            filterQuery += ` AND id NOT IN (
+                SELECT activity_id FROM activity_participants WHERE user_id = ?
+                UNION
+                SELECT activity_id FROM activity_rejections WHERE user_id = ?
+            )`;
+            params.push(userId, userId);
+        }
+
+        // For logged-in users the DB exclusion always returns the next unacted activity at offset 0.
+        // For guests, honour the URL offset so browsing still works.
+        const offset = userId ? 0 : (Number(url.searchParams.get('offset')) || 0);
 
         // ✅ Provide the generic so TypeScript knows the result is a row array, not OkPacket
         const [rows] = await pool.query<RowDataPacket[]>(

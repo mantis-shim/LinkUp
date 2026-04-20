@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
         // AC1 fields: id, username, first_name, last_name, email, city
         const [rows] = await pool.query(
-            'SELECT id, username, first_name, last_name, email, city, created_at FROM users WHERE id = ?',
+            'SELECT id, username FROM users WHERE id = ?',
             [userId]
         );
 
