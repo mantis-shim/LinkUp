@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { redirect } from "@sveltejs/kit";
 
-    goto('/app/activities')
+    redirect(301, '/app/activities')
 </script>
