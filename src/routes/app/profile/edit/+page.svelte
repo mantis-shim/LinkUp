@@ -7,8 +7,13 @@
 
 	let { data, form } = $props();
 	let user = $derived(data.user);
-	let username = $state(data.user?.username ?? '');
+	let username = $state('');
+	let name = $state('');
+	let lastname = $state('');
+	let email = $state('');
+	let city = $state('');
 	let usernameErrorAlertKey = $state<string | null>(null);
+	let emailErrorAlertKey = $state<string | null>(null);
 	let passwordErrorAlertKey = $state<string | null>(null);
 	let showPasswordFields = $state(false);
 	let currentPassword = $state('');
@@ -25,12 +30,17 @@
 	let passwordDotsDisplay = $derived('•'.repeat(passwordDotsCount));
 
 	$effect(() => {
+		username = data.user?.username ?? '';
+		name = data.user?.name ?? '';
+		lastname = data.user?.lastname ?? '';
+		email = data.user?.email ?? '';
+		city = data.user?.city ?? '';
+	});
+
+	$effect(() => {
 		if (!browser) return;
 		const msg = form?.usernameError;
-		if (!msg) {
-			usernameErrorAlertKey = null;
-			return;
-		}
+		if (!msg) { usernameErrorAlertKey = null; return; }
 		const key = `${msg}\0${form.username ?? ''}`;
 		if (usernameErrorAlertKey === key) return;
 		usernameErrorAlertKey = key;
@@ -39,25 +49,22 @@
 
 	$effect(() => {
 		if (!browser) return;
-		const msg = form?.passwordError;
-		if (!msg) {
-			passwordErrorAlertKey = null;
-			return;
-		}
+		const msg = form?.emailError;
+		if (!msg) { emailErrorAlertKey = null; return; }
 		const key = `${msg}\0${form.username ?? ''}`;
-		if (passwordErrorAlertKey === key) return;
-		passwordErrorAlertKey = key;
+		if (emailErrorAlertKey === key) return;
+		emailErrorAlertKey = key;
 		alert(msg);
 	});
 
 	$effect(() => {
-		if (form?.usernameError) {
-			username = data.user?.username ?? '';
-		} else if (form?.username !== undefined) {
-			username = form.username;
-		} else {
-			username = data.user?.username ?? '';
-		}
+		if (!browser) return;
+		const msg = form?.passwordError;
+		if (!msg) { passwordErrorAlertKey = null; return; }
+		const key = `${msg}\0${form.username ?? ''}`;
+		if (passwordErrorAlertKey === key) return;
+		passwordErrorAlertKey = key;
+		alert(msg);
 	});
 
 	async function confirmDeleteAccount() {
@@ -161,10 +168,24 @@
 					{/if}
 					<div class="info-list">
 						<div class="info-item">
+							<span class="label">Vardas</span>
+							<input name="name" type="text" bind:value={name} class="value value-input" placeholder="–" />
+						</div>
+						<div class="info-item">
+							<span class="label">Pavardė</span>
+							<input name="lastname" type="text" bind:value={lastname} class="value value-input" placeholder="–" />
+						</div>
+						<div class="info-item">
+							<span class="label">El. paštas</span>
+							<input name="email" type="email" bind:value={email} class="value value-input" />
+						</div>
+						<div class="info-item">
+							<span class="label">Miestas</span>
+							<input name="city" type="text" bind:value={city} class="value value-input" placeholder="–" />
+						</div>
+						<div class="info-item">
 							<span class="label">Vartotojo vardas</span>
-							<span class="value value-username-col">
-								<input name="username" type="text" bind:value={username} class="value value-input" />
-							</span>
+							<input name="username" type="text" bind:value={username} class="value value-input" />
 						</div>
 						<div class="info-item">
 							<span class="label">Slaptažodis</span>
@@ -332,17 +353,25 @@
 		font-weight: var(--font-semibold);
 		line-height: 1.5;
 		color: var(--color-text);
-		background: none;
-		border: none;
+		background: var(--color-bg-secondary, #f5f3ff);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
 		text-align: right;
 		min-width: 8ch;
 		max-width: 12rem;
-		padding: var(--space-1) 0;
+		padding: var(--space-1) var(--space-2);
 		box-sizing: border-box;
 		outline: none;
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	.value-input:hover {
+		border-color: var(--color-primary);
 	}
 
 	.value-input:focus {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
 		outline: none;
 	}
 
@@ -450,13 +479,6 @@
 		font-family: var(--font-mono);
 		font-size: var(--text-base);
 		letter-spacing: 0.05em;
-	}
-
-	.value-username-col {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		gap: var(--space-1);
 	}
 
 	.modal-actions {
